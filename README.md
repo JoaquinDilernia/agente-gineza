@@ -27,7 +27,7 @@ Guardar TIENDANUBE_STORE_ID, TIENDANUBE_TOKEN y el client secret como TIENDANUBE
 API key de console.anthropic.com como ANTHROPIC_API_KEY.
 
 ## Deploy backend (Railway)
-1. Conectar este repo en Railway; railway.json ya define build y start.
+1. Conectar este repo en Railway con Root Directory = /backend (backend/railway.json define build y start).
 2. Cargar TODAS las env vars de backend/.env.example.
 3. Verificar https://<railway-url>/health → {"ok":true}.
 4. Registrar webhooks: `cd backend && BACKEND_URL=https://<railway-url> node scripts/registerWebhook.js`.
