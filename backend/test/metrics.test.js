@@ -9,7 +9,8 @@ function make() {
       // spend 100000, 10 compras, revenue 700000
       { spend: '60000', actions: [{ action_type: 'purchase', value: '6' }], action_values: [{ action_type: 'purchase', value: '420000' }] },
       { spend: '40000', actions: [{ action_type: 'purchase', value: '4' }], action_values: [{ action_type: 'purchase', value: '280000' }] },
-    ] });
+    ] }),
+  };
   const configStore = createConfigStore(createFakeFirestore());
   return { svc: createMetricsService({ meta, configStore }), meta };
 }
