@@ -48,14 +48,16 @@ export default function Ventas({ api }) {
       )}
       {data?.length > 0 && (
         <div className="card">
-          <table>
-            <thead>
-              <tr><th>Fecha</th><th className="num">Orden</th><th className="num">Venta</th><th className="num">Ganancia</th><th></th></tr>
-            </thead>
-            <tbody>
-              {data.map((s) => <SaleRow key={s.id} s={s} />)}
-            </tbody>
-          </table>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Fecha</th><th className="num">Orden</th><th className="num">Venta</th><th className="num">Ganancia</th><th></th></tr>
+              </thead>
+              <tbody>
+                {data.map((s) => <SaleRow key={s.id} s={s} />)}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </>

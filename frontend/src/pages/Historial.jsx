@@ -28,6 +28,7 @@ export default function Historial({ api }) {
       {!loading && rows.length === 0 && <p className="empty">Sin decisiones {filter !== 'todas' ? `en estado "${filter}"` : 'todavía'}.</p>}
       {rows.length > 0 && (
         <div className="card">
+          <div className="table-wrap">
           <table>
             <thead>
               <tr><th>Fecha</th><th>Acción</th><th>Razón</th><th>Estado</th><th>Resultado</th></tr>
@@ -44,6 +45,7 @@ export default function Historial({ api }) {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </>

@@ -88,6 +88,7 @@ export default function Creativos({ api }) {
       {!loading && data?.length === 0 && <p className="empty">Nada subido todavía.</p>}
       {data?.length > 0 && (
         <div className="card">
+          <div className="table-wrap">
           <table>
             <thead><tr><th>Nombre</th><th>Copy</th><th>Funnel</th><th>Estado</th></tr></thead>
             <tbody>
@@ -101,6 +102,7 @@ export default function Creativos({ api }) {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </>

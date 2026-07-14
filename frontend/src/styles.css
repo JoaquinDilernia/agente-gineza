@@ -138,13 +138,82 @@ button.danger:hover:not(:disabled) { background: var(--danger); color: #101014; 
 .grid { display: grid; gap: 14px; }
 .grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
 .grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
-@media (max-width: 900px) {
-  .grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
-  .content { padding: 20px; }
-  .sidebar { width: 64px; }
-  .sidebar nav a { justify-content: center; }
-  .sidebar nav a > :not(.nav-icon) { display: none; }
-  .brand, .logout { display: none; }
+
+/* tablas con scroll horizontal dentro de su card (clave en mobile) */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ─── Mobile (≤700px): navegación tipo app, abajo ─── */
+@media (max-width: 700px) {
+  body { font-size: 15px; }
+  .shell { flex-direction: column; }
+
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    border-right: none;
+    border-top: 1px solid var(--line);
+    gap: 0;
+    z-index: 50;
+  }
+  .brand { display: none; }
+  .sidebar nav {
+    flex-direction: row;
+    flex: 1;
+    justify-content: space-around;
+    gap: 0;
+  }
+  .sidebar nav a {
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 4px;
+    font-size: 10px;
+    min-width: 44px;
+    text-align: center;
+  }
+  .nav-icon { font-size: 18px; width: auto; }
+  .badge {
+    position: absolute;
+    margin: 0;
+    transform: translate(14px, -4px);
+  }
+  .sidebar nav a { position: relative; }
+  .logout {
+    border: none;
+    padding: 6px 8px;
+    font-size: 10px;
+    flex-direction: column;
+    display: flex;
+    align-items: center;
+  }
+
+  .content {
+    padding: 18px 14px calc(90px + env(safe-area-inset-bottom));
+    max-width: 100%;
+  }
+  .content h1 { font-size: 19px; }
+
+  .grid.cols-4, .grid.cols-2 { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .card { padding: 14px; border-radius: 10px; }
+  .stat-value { font-size: 20px; }
+
+  /* botones táctiles cómodos */
+  button { padding: 12px 16px; font-size: 14.5px; }
+  .decision-actions { flex-direction: row; }
+  .decision-actions button { flex: 1; }
+  input, select, textarea { padding: 12px; font-size: 16px; } /* 16px evita el zoom de iOS */
+
+  .form-row { grid-template-columns: 1fr; }
+  .sale-detail-grid { grid-template-columns: repeat(3, 1fr); }
+  td, th { padding: 8px 6px; font-size: 13px; }
+  .login-card { width: calc(100vw - 32px); padding: 28px; }
 }
 
 /* ─── Stats ─── */
