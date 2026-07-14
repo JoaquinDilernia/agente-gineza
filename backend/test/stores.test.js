@@ -32,6 +32,11 @@ describe('sales dedupe', () => {
     expect(await s.addIfNew(123, { profit: 10 })).toBe(true);
     expect(await s.addIfNew(123, { profit: 10 })).toBe(false);
   });
+  it('acepta un createdAt explícito (para backfill de órdenes históricas)', async () => {
+    const s = createSalesStore(createFakeFirestore());
+    await s.addIfNew(456, { profit: 10 }, '2026-06-01T00:00:00Z');
+    expect((await s.listRecent())[0].createdAt).toBe('2026-06-01T00:00:00Z');
+  });
 });
 
 describe('learnings', () => {

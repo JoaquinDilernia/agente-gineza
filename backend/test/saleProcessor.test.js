@@ -12,7 +12,8 @@ function make() {
       id: 999,
       products: [{ variant_id: 100, price: '50000.00', quantity: 1 }],
       shipping_cost_customer: '0.00',
-      payment_details: { method: 'bank_transfer', installments: '1' },
+      total: '50000.00',
+      payment_details: { method: 'wire_transfer', installments: 1 },
     }),
     getProducts: vi.fn().mockResolvedValue([{ id: 1, variants: [{ id: 100, cost: '20000.00' }] }]),
   };

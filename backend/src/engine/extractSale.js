@@ -1,19 +1,25 @@
 // Mapea una orden de Tienda Nube a los inputs de computeSaleProfit.
-// OJO: al primer webhook real, loguear la orden cruda y validar este mapeo contra el payload real (spec §4).
+// Validado contra un payload real (14/07/2026): payment_details.method viene como
+// "wire_transfer" (no "bank_transfer"), y order.total ya es neto de descuentos/cupones
+// (ej. descuento por pagar transferencia) — sumar products[].price ignora ese descuento
+// y sobrestima la revenue. order.total - envío es la forma correcta de calcularla.
+const TRANSFER_METHODS = new Set(['wire_transfer', 'bank_transfer']);
+
 export function extractSaleInputs(order, costIndex) {
-  let productsRevenue = 0, productsCost = 0;
+  let productsCost = 0;
   const missingCosts = [];
   for (const p of order.products || []) {
-    productsRevenue += Number(p.price) * p.quantity;
     const cost = costIndex[String(p.variant_id)] ?? costIndex[p.variant_id];
     if (cost == null) missingCosts.push(p.variant_id);
     else productsCost += cost * p.quantity;
   }
-  const method = order.payment_details?.method === 'bank_transfer' ? 'transfer' : 'card';
+  const shippingCharged = Number(order.shipping_cost_customer || 0);
+  const productsRevenue = Number(order.total) - shippingCharged;
+  const method = TRANSFER_METHODS.has(order.payment_details?.method) ? 'transfer' : 'card';
   return {
     productsRevenue,
     productsCost,
-    shippingCharged: Number(order.shipping_cost_customer || 0),
+    shippingCharged,
     payment: { method, installments: Number(order.payment_details?.installments || 1) },
     ...(missingCosts.length ? { missingCosts } : {}),
   };

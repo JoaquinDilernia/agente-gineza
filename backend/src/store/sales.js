@@ -1,9 +1,9 @@
 export function createSalesStore(db) {
   const col = db.collection('sales');
   return {
-    async addIfNew(orderId, sale) {
+    async addIfNew(orderId, sale, createdAt = new Date().toISOString()) {
       try {
-        await col.doc(String(orderId)).create({ ...sale, orderId: String(orderId), createdAt: new Date().toISOString() });
+        await col.doc(String(orderId)).create({ ...sale, orderId: String(orderId), createdAt });
         return true;
       } catch (e) {
         if (e.code === 6 || /ALREADY_EXISTS/i.test(String(e.message))) return false;

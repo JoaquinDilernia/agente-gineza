@@ -14,7 +14,11 @@ export function createTiendanubeClient({ storeId, token, fetchFn = fetch }) {
   return {
     getOrder: (id) => req(`/orders/${id}`),
     getProducts: (page = 1) => req(`/products?per_page=200&page=${page}`),
-    listRecentOrders: (sinceIso) => req(`/orders?created_at_min=${encodeURIComponent(sinceIso)}&per_page=200`),
+    listRecentOrders: (sinceIso, { page = 1, paymentStatus } = {}) => {
+      const params = new URLSearchParams({ created_at_min: sinceIso, per_page: '200', page: String(page) });
+      if (paymentStatus) params.set('payment_status', paymentStatus);
+      return req(`/orders?${params.toString()}`);
+    },
     updateVariantPrice: (productId, variantId, price) =>
       req(`/products/${productId}/variants/${variantId}`, { method: 'PUT', body: JSON.stringify({ price: String(price) }) }),
   };

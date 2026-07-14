@@ -20,6 +20,15 @@ describe('cliente tiendanube', () => {
     expect(opts.method).toBe('PUT');
     expect(JSON.parse(opts.body)).toEqual({ price: '45990' });
   });
+  it('listRecentOrders soporta paginación y filtro de estado de pago', async () => {
+    const fetchFn = vi.fn().mockResolvedValue({ ok: true, json: async () => [] });
+    const tn = createTiendanubeClient({ storeId: '111', token: 'tok', fetchFn });
+    await tn.listRecentOrders('2026-06-01T00:00:00Z', { page: 2, paymentStatus: 'paid' });
+    const [url] = fetchFn.mock.calls[0];
+    expect(String(url)).toContain('page=2');
+    expect(String(url)).toContain('payment_status=paid');
+    expect(String(url)).toContain('created_at_min=2026-06-01');
+  });
   it('error HTTP → throw con status', async () => {
     const fetchFn = vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => 'rate limited' });
     const tn = createTiendanubeClient({ storeId: '111', token: 'tok', fetchFn });
@@ -28,23 +37,30 @@ describe('cliente tiendanube', () => {
 });
 
 describe('extractSaleInputs', () => {
+  // Basado en un payload real de Tienda Nube (14/07/2026): products suman 65000,
+  // pero total=63000 (hubo $2000 de descuento) y envío=5000 → revenue neta = 58000.
   const order = {
     products: [
       { variant_id: 100, price: '25000.00', quantity: 2 },
-      { variant_id: 200, price: '10000.00', quantity: 1 },
+      { variant_id: 200, price: '15000.00', quantity: 1 },
     ],
     shipping_cost_customer: '5000.00',
-    gateway: 'nuvempago',
-    payment_details: { method: 'credit_card', installments: '3' },
+    total: '63000.00',
+    gateway: 'pago-nube',
+    payment_details: { method: 'credit_card', installments: 3 },
   };
-  it('mapea revenue, costo, envío y pago', () => {
+  it('revenue sale de order.total neto de envío (NO de sumar products[].price) — así se descuenta cualquier cupón/descuento', () => {
     const r = extractSaleInputs(order, { 100: 9000, 200: 4000 });
-    expect(r.productsRevenue).toBe(60000);
+    expect(r.productsRevenue).toBe(58000); // 63000 - 5000, no 65000
     expect(r.productsCost).toBe(22000);
     expect(r.shippingCharged).toBe(5000);
     expect(r.payment).toEqual({ method: 'card', installments: 3 });
   });
-  it('transferencia se detecta por payment_details.method', () => {
+  it('transferencia real de Tienda Nube es "wire_transfer", no "bank_transfer"', () => {
+    const r = extractSaleInputs({ ...order, payment_details: { method: 'wire_transfer', installments: 1 } }, {});
+    expect(r.payment.method).toBe('transfer');
+  });
+  it('acepta también "bank_transfer" por compatibilidad', () => {
     const r = extractSaleInputs({ ...order, payment_details: { method: 'bank_transfer' } }, {});
     expect(r.payment.method).toBe('transfer');
   });
