@@ -1,6 +1,42 @@
 import { useState } from 'react';
 import { usePolling } from '../hooks/usePolling.js';
 
+function CreativeRequests({ api }) {
+  const { data, error, loading, reload } = usePolling(() => api.get('/creative-requests'), [api]);
+  const [busyId, setBusyId] = useState(null);
+
+  async function dismiss(id) {
+    setBusyId(id);
+    try {
+      await api.post(`/creative-requests/${id}/dismiss`);
+      reload();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return null;
+  if (error) return <div className="error-banner">{error}</div>;
+  if (!data || data.length === 0) return null;
+
+  return (
+    <>
+      <div className="section-title" style={{ marginTop: 0 }}>🎯 Pedidos del agente</div>
+      {data.map((r) => (
+        <div className="card" key={r.id}>
+          <span className={`chip ${r.funnel === 'frio' ? 'pending' : 'unused'}`}>{r.funnel}</span>
+          <strong style={{ marginLeft: 8 }}>{r.concept}</strong>
+          <p style={{ margin: '8px 0' }}>{r.styleNotes}</p>
+          <p className="stat-note" style={{ marginBottom: 10 }}>Por qué: {r.reason}</p>
+          <button className="ghost" disabled={busyId === r.id} onClick={() => dismiss(r.id)}>
+            {busyId === r.id ? '…' : 'Ya lo subí / descartar'}
+          </button>
+        </div>
+      ))}
+    </>
+  );
+}
+
 export default function Creativos({ api }) {
   const { data, error, loading, reload } = usePolling(() => api.get('/creatives'), [api]);
   const [form, setForm] = useState({ name: '', copy: '', funnel: 'caliente', notes: '' });
@@ -36,6 +72,8 @@ export default function Creativos({ api }) {
     <>
       <h1>Creativos</h1>
       <p className="page-sub">Subí las piezas y el agente crea los anuncios solo (sin mejoras de IA de Meta, como siempre).</p>
+
+      <CreativeRequests api={api} />
 
       <form className="card" onSubmit={submit}>
         <div className="form-row">

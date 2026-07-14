@@ -27,6 +27,7 @@ function DecisionCard({ d, api, onDone }) {
   }
 
   const input = d.input || {};
+  const interests = input.payload?.targeting?.flexible_spec?.flatMap((f) => f.interests || []) || [];
   return (
     <div className="card">
       <span className="decision-tool">{TOOL_LABELS[d.tool] || d.tool}</span>
@@ -40,6 +41,19 @@ function DecisionCard({ d, api, onDone }) {
       {input.current_price != null && (
         <div className="stat-note">
           ${Number(input.current_price).toLocaleString('es-AR')} → ${Number(input.proposed_price).toLocaleString('es-AR')}
+        </div>
+      )}
+      {d.tool === 'propose_campaign_structure_change' && (
+        <div className="campaign-test-detail">
+          {input.action && <span className="chip pending">{input.action.replace('_', ' ')}</span>}
+          {input.payload?.name && <div className="stat-note">Nombre: {input.payload.name}</div>}
+          {input.daily_budget_ars != null && (
+            <div className="stat-note">Presupuesto: ${Number(input.daily_budget_ars).toLocaleString('es-AR')}/día</div>
+          )}
+          {interests.length > 0 && (
+            <div className="stat-note">Público: {interests.map((i) => i.name).join(', ')}</div>
+          )}
+          {input.creative_id && <div className="stat-note">✓ Incluye pieza creativa lista para lanzar</div>}
         </div>
       )}
       <p className="decision-reason">{d.reason}</p>

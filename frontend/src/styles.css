@@ -261,6 +261,15 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
 
 /* ─── Aprobaciones ─── */
 .decision-tool { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+.campaign-test-detail {
+  background: var(--panel-2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 .decision-reason { margin: 8px 0; }
 .decision-impact { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
 .decision-actions { display: flex; gap: 10px; }
