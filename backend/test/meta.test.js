@@ -31,6 +31,23 @@ describe('cliente meta', () => {
   });
 });
 
+describe('searchInterests', () => {
+  it('pega a /search?type=adinterest sin accountId en el path', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(okJson({ data: [
+      { id: '6003107902433', name: 'Running', audience_size_lower_bound: 1000000, audience_size_upper_bound: 2000000 },
+    ] }));
+    const meta = createMetaClient({ accessToken: 'tok', accountId: 'act_1', fetchFn });
+    const results = await meta.searchInterests('running');
+    const [url] = fetchFn.mock.calls[0];
+    expect(String(url)).toContain('/v23.0/search');
+    expect(String(url)).toContain('type=adinterest');
+    expect(String(url)).not.toContain('act_1');
+    expect(results).toEqual([
+      { id: '6003107902433', name: 'Running', audienceMin: 1000000, audienceMax: 2000000 },
+    ]);
+  });
+});
+
 describe('buildAdName', () => {
   it('formato FUNNEL_TAG_CREATIVO_FECHA, sin acentos', () => {
     expect(buildAdName({ funnel: 'caliente', adsetTag: 'ATC14D', creativeName: 'Bordó', date: new Date('2026-07-14T12:00:00Z') }))

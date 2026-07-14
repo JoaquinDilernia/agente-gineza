@@ -35,6 +35,7 @@ export function createContextBuilder({ meta, tiendanube, stores, configStore }) 
         activeLearnings: await stores.learnings.listActive(),
         recentDecisions: await stores.decisions.listRecent(30),
         unusedCreatives: await stores.creatives.listUnused(),
+        openCreativeRequests: await stores.creativeRequests.listOpen(),
         ...extra,
       };
       if (kind === 'deep') {

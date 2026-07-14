@@ -4,6 +4,7 @@ import { createChatToolDispatcher } from '../src/agent/chatDispatcher.js';
 import { createDecisionsStore } from '../src/store/decisions.js';
 import { createLearningsStore } from '../src/store/learnings.js';
 import { createProposalsStore } from '../src/store/proposals.js';
+import { createCreativeRequestsStore } from '../src/store/creativeRequests.js';
 
 let stores, meta, tiendanube, createAdFromCreative, dispatch;
 
@@ -13,6 +14,7 @@ beforeEach(() => {
     decisions: createDecisionsStore(db),
     learnings: createLearningsStore(db),
     proposals: createProposalsStore(db),
+    creativeRequests: createCreativeRequestsStore(db),
   };
   meta = {
     pauseAd: vi.fn().mockResolvedValue({ success: true }),
@@ -21,6 +23,7 @@ beforeEach(() => {
     pauseCampaign: vi.fn().mockResolvedValue({}),
     createAdset: vi.fn().mockResolvedValue({ id: 'as_1' }),
     createCampaign: vi.fn().mockResolvedValue({ id: 'c_1' }),
+    searchInterests: vi.fn().mockResolvedValue([{ id: '2', name: 'Yoga', audienceMin: 50, audienceMax: 90 }]),
   };
   tiendanube = { updateVariantPrice: vi.fn().mockResolvedValue({}) };
   createAdFromCreative = vi.fn().mockResolvedValue({ ad_id: 'ad_9', name: 'X' });
@@ -50,11 +53,21 @@ describe('chatDispatcher — todo ejecuta directo, nada queda pending', () => {
     expect(tiendanube.updateVariantPrice).toHaveBeenCalledWith('10', '20', 45990);
   });
 
-  it('propose_campaign_structure_change: create_adset ejecuta con el payload', async () => {
+  it('propose_campaign_structure_change: create_adset ejecuta con el payload y convierte el presupuesto', async () => {
     const payload = { name: 'X', campaign_id: 'c1' };
-    const r = await dispatch('propose_campaign_structure_change', { action: 'create_adset', payload, reason: 'x' });
-    expect(meta.createAdset).toHaveBeenCalledWith(payload);
-    expect(r.ok).toBe(true);
+    meta.createAdset.mockResolvedValue({ id: 'as_nuevo' });
+    const r = await dispatch('propose_campaign_structure_change', { action: 'create_adset', payload, daily_budget_ars: 5000, reason: 'x' });
+    expect(meta.createAdset).toHaveBeenCalledWith({ ...payload, daily_budget: 500000 });
+    expect(r.adset).toEqual({ id: 'as_nuevo' });
+  });
+
+  it('propose_campaign_structure_change con creative_id: crea el conjunto Y el ad en un solo pedido', async () => {
+    meta.createAdset.mockResolvedValue({ id: 'as_nuevo' });
+    const r = await dispatch('propose_campaign_structure_change', {
+      action: 'create_adset', payload: { name: 'TEST' }, daily_budget_ars: 3000, creative_id: 'cr_1', reason: 'probar público running',
+    });
+    expect(createAdFromCreative).toHaveBeenCalledWith({ creative_id: 'cr_1', adset_id: 'as_nuevo' });
+    expect(r.ad.ad_id).toBe('ad_9');
   });
 
   it('create_ad usa createAdFromCreative y marca el creativo usado', async () => {
@@ -68,6 +81,18 @@ describe('chatDispatcher — todo ejecuta directo, nada queda pending', () => {
     const r = await dispatch('pause_ad', { ad_id: '1', reason: 'x' });
     expect(r.error).toMatch(/Meta 100/);
     expect((await stores.decisions.listRecent())[0].status).toBe('failed');
+  });
+
+  it('search_interest devuelve resultados sin registrar decisión', async () => {
+    const r = await dispatch('search_interest', { query: 'yoga' });
+    expect(r.results).toEqual([{ id: '2', name: 'Yoga', audienceMin: 50, audienceMax: 90 }]);
+    expect(await stores.decisions.listRecent()).toHaveLength(0);
+  });
+
+  it('request_creative guarda el pedido', async () => {
+    const r = await dispatch('request_creative', { funnel: 'frio', concept: 'X', style_notes: 'Y', reason: 'Z' });
+    expect(r.ok).toBe(true);
+    expect(await stores.creativeRequests.listOpen()).toHaveLength(1);
   });
 
   it('log_improvement_proposal y save_learning solo registran, no ejecutan nada', async () => {

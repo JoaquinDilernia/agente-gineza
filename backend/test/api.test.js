@@ -10,6 +10,7 @@ import { createSalesStore } from '../src/store/sales.js';
 import { createLearningsStore } from '../src/store/learnings.js';
 import { createProposalsStore } from '../src/store/proposals.js';
 import { createCreativesStore } from '../src/store/creatives.js';
+import { createCreativeRequestsStore } from '../src/store/creativeRequests.js';
 import { createChatMessagesStore } from '../src/store/chatMessages.js';
 import { createConfigStore } from '../src/config/configStore.js';
 
@@ -23,6 +24,7 @@ beforeEach(() => {
     decisions: createDecisionsStore(db), sales: createSalesStore(db),
     learnings: createLearningsStore(db), proposals: createProposalsStore(db),
     creatives: createCreativesStore(db), chatMessages: createChatMessagesStore(db),
+    creativeRequests: createCreativeRequestsStore(db),
   };
   meta = { updateBudget: vi.fn().mockResolvedValue({}), pauseAd: vi.fn(), pauseCampaign: vi.fn(), updateAdsetStatus: vi.fn(), createAdset: vi.fn(), createCampaign: vi.fn() };
   tiendanube = { updateVariantPrice: vi.fn().mockResolvedValue({}) };
@@ -118,6 +120,15 @@ describe('agent run manual', () => {
     const res = await auth(request(app).post('/api/agent/run'));
     expect(res.status).toBe(200);
     expect(runner.runDeep).toHaveBeenCalled();
+  });
+});
+
+describe('creative-requests', () => {
+  it('GET lista abiertos, POST dismiss los saca de la lista', async () => {
+    const r = await stores.creativeRequests.add({ funnel: 'caliente', concept: 'X', styleNotes: 'Y', reason: 'Z' });
+    expect((await auth(request(app).get('/api/creative-requests'))).body).toHaveLength(1);
+    await auth(request(app).post(`/api/creative-requests/${r.id}/dismiss`));
+    expect((await auth(request(app).get('/api/creative-requests'))).body).toHaveLength(0);
   });
 });
 

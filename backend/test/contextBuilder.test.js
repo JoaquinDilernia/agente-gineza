@@ -5,6 +5,7 @@ import { createConfigStore } from '../src/config/configStore.js';
 import { createDecisionsStore } from '../src/store/decisions.js';
 import { createLearningsStore } from '../src/store/learnings.js';
 import { createCreativesStore } from '../src/store/creatives.js';
+import { createCreativeRequestsStore } from '../src/store/creativeRequests.js';
 import { createSalesStore } from '../src/store/sales.js';
 
 function makeBuilder() {
@@ -13,6 +14,7 @@ function makeBuilder() {
     decisions: createDecisionsStore(db),
     learnings: createLearningsStore(db),
     creatives: createCreativesStore(db),
+    creativeRequests: createCreativeRequestsStore(db),
     sales: createSalesStore(db),
   };
   const meta = {

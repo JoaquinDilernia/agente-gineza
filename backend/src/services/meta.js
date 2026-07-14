@@ -60,6 +60,14 @@ export function createMetaClient({ accessToken, accountId, fetchFn = fetch, retr
       return Object.values(json.images)[0].hash;
     },
     createCreative: (spec) => req(`${accountId}/adcreatives`, { method: 'POST', body: spec }),
+    async searchInterests(query) {
+      // endpoint de búsqueda de segmentación: NO va bajo la cuenta publicitaria
+      const json = await req('search', { params: { type: 'adinterest', q: query, limit: '20' } });
+      return (json.data || []).map((d) => ({
+        id: d.id, name: d.name,
+        audienceMin: d.audience_size_lower_bound, audienceMax: d.audience_size_upper_bound,
+      }));
+    },
     createAd: ({ name, adsetId, creativeId, status = 'ACTIVE' }) =>
       req(`${accountId}/ads`, { method: 'POST', body: { name, adset_id: adsetId, creative: { creative_id: creativeId }, status } }),
   };

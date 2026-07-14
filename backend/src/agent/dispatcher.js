@@ -27,6 +27,15 @@ export function createToolDispatcher({ meta, stores, configStore, createAdFromCr
         await stores.proposals.add({ title: input.title, body: input.body });
         return { ok: true };
       }
+      if (name === 'search_interest') {
+        return { results: await meta.searchInterests(input.query) };
+      }
+      if (name === 'request_creative') {
+        await stores.creativeRequests.add({
+          funnel: input.funnel, concept: input.concept, styleNotes: input.style_notes, reason: input.reason,
+        });
+        return { ok: true };
+      }
       if (name === 'save_learning') {
         const id = await stores.learnings.upsert(input);
         return { ok: true, learning_id: id };

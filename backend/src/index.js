@@ -9,6 +9,7 @@ import { createSalesStore } from './store/sales.js';
 import { createLearningsStore } from './store/learnings.js';
 import { createProposalsStore } from './store/proposals.js';
 import { createCreativesStore } from './store/creatives.js';
+import { createCreativeRequestsStore } from './store/creativeRequests.js';
 import { createChatMessagesStore } from './store/chatMessages.js';
 import { createAgentStateStore } from './store/agentState.js';
 import { createMetaClient } from './services/meta.js';
@@ -43,6 +44,7 @@ const stores = {
   learnings: createLearningsStore(db),
   proposals: createProposalsStore(db),
   creatives: createCreativesStore(db),
+  creativeRequests: createCreativeRequestsStore(db),
   chatMessages: createChatMessagesStore(db),
 };
 const agentState = createAgentStateStore(db);

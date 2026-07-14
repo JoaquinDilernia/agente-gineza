@@ -64,6 +64,12 @@ export function createApiRouter({ stores, configStore, executor, storage, runner
   });
   r.get('/creatives', async (_req, res) => res.json(await stores.creatives.list()));
 
+  r.get('/creative-requests', async (_req, res) => res.json(await stores.creativeRequests.listOpen()));
+  r.post('/creative-requests/:id/dismiss', async (req, res) => {
+    await stores.creativeRequests.dismiss(req.params.id);
+    res.json({ ok: true });
+  });
+
   r.post('/agent/run', async (_req, res) => {
     Promise.resolve(runner.runDeep()).catch((err) => console.error('[agent/run] falló:', err));
     res.json({ started: true });

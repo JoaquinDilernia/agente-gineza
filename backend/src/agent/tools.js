@@ -29,8 +29,39 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: 'propose_campaign_structure_change',
-    description: 'Propone pausar o crear conjuntos/campañas. QUEDA PENDIENTE de aprobación humana. Para crear, incluir el payload completo de Graph API en payload.',
-    input_schema: { type: 'object', properties: { action: { type: 'string', enum: ['pause_adset', 'pause_campaign', 'create_adset', 'create_campaign'] }, object_id: s('ID del objeto a pausar (para pause_*)'), object_name: s('Nombre legible'), payload: { type: 'object', description: 'Payload Graph API completo (para create_*)' }, ...base }, required: ['action', ...baseReq] },
+    description: 'Propone pausar o crear conjuntos/campañas — incluye probar públicos/intereses nuevos, campañas de testeo, o duplicar una estructura que funciona con otro segmento. QUEDA PENDIENTE de aprobación humana (salvo que te lo pidan en el chat). Para crear un conjunto de prueba COMPLETO (público + presupuesto + pieza) en una sola aprobación: usá action=create_adset, payload con el targeting (con los interest_id que confirmaste con search_interest) y demás campos de Graph API EXCEPTO el presupuesto, daily_budget_ars con el presupuesto diario en PESOS (se convierte solo a centavos), y creative_id con el id de un creativo de unusedCreatives para que además cree el anuncio ya armado en ese conjunto nuevo. No hace falta esperar evidencia de que algo "no funciona" para proponer un test — proponelo si ves una oportunidad razonable (audiencia sin explorar, segmento del funnel desatendido, etc.), dejando claro en reason que es exploratorio.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['pause_adset', 'pause_campaign', 'create_adset', 'create_campaign'] },
+        object_id: s('ID del objeto a pausar (para pause_*)'),
+        object_name: s('Nombre legible'),
+        payload: { type: 'object', description: 'Payload Graph API para create_adset/create_campaign (targeting, name, campaign_id, optimization_goal, etc.) SIN el presupuesto' },
+        daily_budget_ars: { type: 'number', description: 'Presupuesto diario en PESOS para create_adset/create_campaign (se convierte a centavos solo)' },
+        creative_id: s('Solo para create_adset: id de un creativo de unusedCreatives para lanzar el ad ya armado en el conjunto nuevo'),
+        ...base,
+      },
+      required: ['action', ...baseReq],
+    },
+  },
+  {
+    name: 'search_interest',
+    description: 'Busca intereses/segmentos de audiencia reales en Meta (con tamaño de audiencia) para armar el targeting de una propuesta de conjunto/campaña nueva. Usalo ANTES de proponer un público nuevo — no inventes interest_id.',
+    input_schema: { type: 'object', properties: { query: s('Término de búsqueda, ej. "running", "moda femenina"') }, required: ['query'] },
+  },
+  {
+    name: 'request_creative',
+    description: 'Pedile al usuario piezas creativas nuevas cuando detectes que hacen falta (fatiga, funnel desatendido, oportunidad de ángulo nuevo). NO genera la imagen — queda como pedido en el dashboard para que el usuario suba la pieza. No requiere aprobación, es solo un pedido.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        funnel: { type: 'string', enum: ['caliente', 'frio', 'ambos'] },
+        concept: s('Idea corta del concepto, ej. "Uniforme de invierno, foco en abrigo"'),
+        style_notes: s('Dirección de estilo: formato, tono, colores, referencias — lo más concreto posible'),
+        reason: s('Por qué hace falta esta pieza ahora, con números si aplica'),
+      },
+      required: ['funnel', 'concept', 'style_notes', 'reason'],
+    },
   },
   {
     name: 'log_improvement_proposal',

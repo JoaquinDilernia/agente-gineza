@@ -5,6 +5,7 @@ import { createDecisionsStore } from '../src/store/decisions.js';
 import { createLearningsStore } from '../src/store/learnings.js';
 import { createProposalsStore } from '../src/store/proposals.js';
 import { createConfigStore } from '../src/config/configStore.js';
+import { createCreativeRequestsStore } from '../src/store/creativeRequests.js';
 
 let db, stores, configStore, meta, createAdFromCreative, dispatch;
 
@@ -14,9 +15,13 @@ beforeEach(() => {
     decisions: createDecisionsStore(db),
     learnings: createLearningsStore(db),
     proposals: createProposalsStore(db),
+    creativeRequests: createCreativeRequestsStore(db),
   };
   configStore = createConfigStore(db);
-  meta = { pauseAd: vi.fn().mockResolvedValue({ success: true }) };
+  meta = {
+    pauseAd: vi.fn().mockResolvedValue({ success: true }),
+    searchInterests: vi.fn().mockResolvedValue([{ id: '1', name: 'Running', audienceMin: 100, audienceMax: 200 }]),
+  };
   createAdFromCreative = vi.fn().mockResolvedValue({ ad_id: 'ad_9', name: 'X' });
   dispatch = createToolDispatcher({ meta, stores, configStore, createAdFromCreative });
 });
@@ -62,6 +67,19 @@ describe('dispatcher', () => {
     const d = await stores.decisions.add({ tool: 'pause_ad', status: 'executed' });
     await dispatch('record_outcome', { decision_id: d.id, outcome: 'ROAS del conjunto subió 6.9→7.4' });
     expect((await stores.decisions.get(d.id)).outcome).toMatch(/7.4/);
+  });
+  it('search_interest devuelve resultados de Meta sin registrar decisión', async () => {
+    const r = await dispatch('search_interest', { query: 'running' });
+    expect(meta.searchInterests).toHaveBeenCalledWith('running');
+    expect(r.results).toEqual([{ id: '1', name: 'Running', audienceMin: 100, audienceMax: 200 }]);
+    expect(await stores.decisions.listRecent()).toHaveLength(0);
+  });
+  it('request_creative guarda el pedido para el dashboard', async () => {
+    const r = await dispatch('request_creative', {
+      funnel: 'caliente', concept: 'Uniforme invierno', style_notes: 'fondo oscuro', reason: 'ATC concentrado en 1 ad',
+    });
+    expect(r.ok).toBe(true);
+    expect(await stores.creativeRequests.listOpen()).toHaveLength(1);
   });
   it('tool desconocida → error sin romper', async () => {
     const r = await dispatch('inventada', {});
