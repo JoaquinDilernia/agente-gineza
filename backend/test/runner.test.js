@@ -37,9 +37,12 @@ describe('runner', () => {
     await runner.runDeep();
     expect(dispatch).toHaveBeenCalledWith('pause_ad', { ad_id: '1' });
     expect(create).toHaveBeenCalledTimes(2);
-    // el segundo call incluye el tool_result
+    // el segundo call incluye el tool_result (el runner muta messages, buscamos el mensaje puntual)
     const secondMessages = create.mock.calls[1][0].messages;
-    expect(secondMessages.at(-1).content[0]).toMatchObject({ type: 'tool_result', tool_use_id: 't1' });
+    const toolResultMsg = secondMessages.find(
+      (m) => m.role === 'user' && Array.isArray(m.content) && m.content[0]?.type === 'tool_result',
+    );
+    expect(toolResultMsg.content[0]).toMatchObject({ type: 'tool_result', tool_use_id: 't1' });
   });
   it('onSale respeta el rate limit: encola sin correr', async () => {
     const { runner, create, agentState } = makeRunner([]);
