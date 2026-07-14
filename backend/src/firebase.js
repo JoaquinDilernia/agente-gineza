@@ -21,5 +21,8 @@ export function initFirebase() {
     credential: creds,
     storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
   });
-  return { db: admin.firestore(app), auth: admin.auth(app), bucket: admin.storage(app).bucket() };
+  // Sin bucket configurado el server igual arranca (Firestore y Auth funcionan);
+  // solo falla la subida/bajada de creativos, con error claro en ese momento.
+  const bucket = process.env.FIREBASE_STORAGE_BUCKET ? admin.storage(app).bucket() : null;
+  return { db: admin.firestore(app), auth: admin.auth(app), bucket };
 }
