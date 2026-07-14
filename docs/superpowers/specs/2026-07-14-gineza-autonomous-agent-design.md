@@ -24,7 +24,7 @@ Agente autónomo que optimiza las campañas de Meta Ads de Gineza y resuelve el 
 **Estructura del repo:** monorepo con `/frontend` y `/backend`.
 
 **Credenciales (variables de entorno en Railway):**
-- `META_ACCESS_TOKEN` — System User token. El usuario ya tiene uno (lo usa el chatbot de WhatsApp); **hay que verificar que tenga scopes `ads_management` y `ads_read`**, y agregárselos si no.
+- `META_ACCESS_TOKEN` — System User token con scopes `ads_read`, `ads_management`, `business_management`, `pages_read_engagement`, `pages_show_list`, `catalog_management`, y con los activos asignados al system user en Business Manager: cuenta publicitaria, página Gineza, píxel y catálogo. El token existente del bot de WhatsApp probablemente solo tiene scopes de mensajería — generar un token nuevo (mismo system user u uno nuevo "gineza-agent") sin tocar el del bot.
 - `TIENDANUBE_TOKEN` + `TIENDANUBE_STORE_ID` — de la app interna creada desde el panel de Tienda Nube.
 - `ANTHROPIC_API_KEY`.
 - Credenciales de Firebase Admin SDK.
@@ -52,11 +52,20 @@ Claude recibe el contexto y un set de tools que el backend ejecuta. Nunca texto 
 | `propose_budget_change` | Requiere aprobación | Ídem; al aprobarse, actualiza presupuesto vía Graph API |
 | `propose_campaign_structure_change` | Requiere aprobación | Pausar/crear conjuntos o campañas; ídem |
 | `log_improvement_proposal` | Solo registro | Va a la sección "Propuestas" del dashboard |
+| `save_learning` | Solo registro | Guarda/actualiza una lección destilada en `learnings` (ver Loop de aprendizaje) |
 
 **Toda invocación** (ejecutada, pendiente, aprobada, rechazada o fallida) se registra en `decisions` con: tipo, objetivo, razonamiento completo de Claude, impacto esperado con números, estado, y resultado posterior cuando sea medible.
 
 ### Interruptor de emergencia
 Toggle en Config que desactiva el modo autónomo: el agente deja de ejecutar acciones solo (todo pasa a `pending` o se detiene), el dashboard sigue funcionando.
+
+### Loop de aprendizaje
+El agente aprende de cada cosa que hace, en dos niveles:
+
+1. **Medición de resultados por decisión.** Cada decisión ejecutada guarda las métricas del momento (snapshot "antes"). El cron diario incluye un paso de retrospectiva: para las decisiones con 48–72h de antigüedad ya medibles, compara el "antes" con el estado actual y escribe el `outcome` en `decisions` (ej. "pausé AUD31 → el gasto se redistribuyó a AUD37, ROAS del conjunto subió de 6.9x a 7.4x" o "el ad nuevo BORDO lleva $8K gastados sin ventas").
+2. **Lecciones destiladas (`learnings`).** En la misma retrospectiva, Claude tiene una tool `save_learning`: cuando detecta un patrón con evidencia (no una corazonada de una sola muestra), lo guarda como lección corta con su evidencia — el mismo criterio de las memorias de sesión que veníamos usando (ej. "IG Engagers 30D nunca convierte tras 3 ciclos", "los creativos genéricos rinden mejor en frío"). Las lecciones activas se inyectan en el contexto de **todos** los análisis futuros, y Claude puede actualizarlas o marcarlas obsoletas si nueva evidencia las contradice. Las lecciones se muestran en el dashboard (sección Propuestas o una pestaña propia "Aprendizajes") para que el usuario las pueda auditar y borrar manualmente si alguna es errónea.
+
+Regla anti-ruido: una lección requiere evidencia repetida (mínimo 2–3 observaciones consistentes) — el sesgo de muestra chica ya nos quemó una vez (el "10x" del catálogo con 2 ventas).
 
 ## 4. Motor de rentabilidad real (núcleo del proyecto)
 
@@ -90,6 +99,7 @@ De la fórmula sale el ROAS mínimo para no perder plata en CADA producto según
 | `sales` | Feed de ventas con desglose de rentabilidad; dedupe por ID de orden |
 | `creatives` | Imagen feed 4:5 + story 9:16 (Storage), copy, funnel recomendado (frío/caliente/ambos), notas de contexto, estado (`unused`/`used`), referencia al ad creado |
 | `config` | % comisión Pago Nube por método, % impuestos, multiplicador Meta (1.30, toggle), ROAS piso, presupuesto diario min/max (hoy 30k–50k ARS), mapeo adset_id→tag para naming, kill switch autónomo |
+| `learnings` | Lecciones destiladas del agente: texto corto, evidencia que la sustenta, estado (`active`/`obsolete`), fechas; se inyectan en el contexto de todo análisis futuro |
 | `meta_state_cache` / `tn_state_cache` | Snapshots TTL ~15 min para no pegarle a las APIs en cada carga del dashboard |
 
 ## 6. Dashboard (React)
