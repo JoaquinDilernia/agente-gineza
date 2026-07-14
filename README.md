@@ -47,6 +47,19 @@ npm install && npm start            # http://localhost:3000
 npx vitest run                      # tests
 ```
 
-## Frontend
-El dashboard React (Hostinger) tiene su propio plan de implementación (pendiente:
-se escribe cuando este backend esté deployado — consume esta API).
+## Frontend (dashboard)
+React + Vite en `frontend/`. Login con contraseña simple (la misma DASHBOARD_PASSWORD
+del backend). Páginas: Resumen, Ventas, Aprobaciones, Historial, Creativos,
+Propuestas/Aprendizajes y Config (incluye el kill switch del modo autónomo).
+
+### Deploy en Hostinger
+1. `cd frontend && cp .env.example .env` → poner la URL real del backend en VITE_API_URL.
+2. `npm install && npm run build`.
+3. Subir el CONTENIDO de `frontend/dist/` (incluye el `.htaccess` para el fallback
+   de rutas SPA) a la carpeta del dominio en Hostinger (public_html o subdominio).
+4. En Railway, FRONTEND_ORIGIN debe ser exactamente el dominio del dashboard
+   (para CORS), y DASHBOARD_PASSWORD la contraseña elegida.
+
+### Correr local
+cd frontend && npm install && npm run dev   # http://localhost:5173 (backend en :3000)
+npx vitest run                              # tests
