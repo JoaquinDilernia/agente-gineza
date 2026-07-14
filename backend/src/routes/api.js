@@ -3,12 +3,19 @@ import multer from 'multer';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
-export function createApiRouter({ stores, configStore, executor, storage, runner }) {
+export function createApiRouter({ stores, configStore, executor, storage, runner, metrics }) {
   const r = express.Router();
 
   r.get('/summary', async (_req, res) => {
     const [sales, pending] = await Promise.all([stores.sales.listRecent(100), stores.decisions.listPending()]);
     res.json({ sales, pendingCount: pending.length });
+  });
+  r.get('/metrics', async (_req, res) => {
+    try {
+      res.json(await metrics.last7d());
+    } catch (err) {
+      res.status(502).json({ error: String(err.message || err) });
+    }
   });
   r.get('/sales', async (_req, res) => res.json(await stores.sales.listRecent(100)));
   r.get('/decisions', async (req, res) => {

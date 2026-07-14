@@ -19,6 +19,7 @@ import { createAdBuilder } from './agent/createAd.js';
 import { createAgentRunner } from './agent/runner.js';
 import { createSaleProcessor } from './agent/saleProcessor.js';
 import { createDecisionExecutor } from './agent/decisionExecutor.js';
+import { createMetricsService } from './services/metrics.js';
 import { createWebhookRouter } from './routes/webhooks.js';
 import { createApiRouter } from './routes/api.js';
 import { createAuthMiddleware } from './routes/authMiddleware.js';
@@ -57,6 +58,7 @@ const contextBuilder = createContextBuilder({ meta, tiendanube, stores, configSt
 const runner = createAgentRunner({ anthropic, contextBuilder, dispatch, agentState, configStore });
 const saleProcessor = createSaleProcessor({ tiendanube, meta, stores, configStore, runner });
 const executor = createDecisionExecutor({ meta, tiendanube, createAdFromCreative });
+const metrics = createMetricsService({ meta, configStore });
 
 const app = createApp({
   corsOrigin: env('FRONTEND_ORIGIN'),
@@ -66,7 +68,7 @@ const app = createApp({
   }),
   apiRouter: [
     createAuthMiddleware({ auth, allowedEmail: env('ALLOWED_EMAIL') }),
-    createApiRouter({ stores, configStore, executor, storage, runner }),
+    createApiRouter({ stores, configStore, executor, storage, runner, metrics }),
   ],
 });
 
