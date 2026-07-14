@@ -4,7 +4,9 @@ import { shouldRunSaleAnalysis } from './rateLimit.js';
 
 const MAX_TURNS = 15;
 
-export function createAgentRunner({ anthropic, contextBuilder, dispatch, agentState, configStore, model = 'claude-sonnet-5' }) {
+const CHAT_MAX_TURNS = 8;
+
+export function createAgentRunner({ anthropic, contextBuilder, dispatch, agentState, configStore, chatMessages, chatDispatch, model = 'claude-sonnet-5' }) {
   async function run(kind, extra = {}) {
     const context = await contextBuilder.build(kind, extra);
     const messages = [{ role: 'user', content: context }];
@@ -47,6 +49,37 @@ export function createAgentRunner({ anthropic, contextBuilder, dispatch, agentSt
       await agentState.set({ pendingOrderIds: [], lastSaleRunAt: new Date().toISOString() });
       await run('sale', { newOrders: pending.map((id) => ({ orderId: id })), latestOrder: orderSummary });
       return { ran: true, orders: pending };
+    },
+    async chat(userMessage) {
+      const context = await contextBuilder.build('deep');
+      const history = await chatMessages.listRecent(40);
+      const messages = [
+        { role: 'user', content: `[CONTEXTO ACTUALIZADO DE LA CUENTA]\n${context}` },
+        { role: 'assistant', content: 'Leído, quedo atento.' },
+        ...history.map((m) => ({ role: m.role, content: m.content })),
+        { role: 'user', content: userMessage },
+      ];
+      let reply = '';
+      for (let turn = 0; turn < CHAT_MAX_TURNS; turn++) {
+        const stream = anthropic.messages.stream({
+          model, max_tokens: 8000, output_config: { effort: 'medium' },
+          system: SYSTEM_PROMPT, tools: TOOL_DEFINITIONS, messages,
+        });
+        const resp = await stream.finalMessage();
+        messages.push({ role: 'assistant', content: resp.content });
+        const text = resp.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n');
+        if (text) reply = text;
+        if (resp.stop_reason !== 'tool_use') break;
+        const results = [];
+        for (const block of resp.content.filter((b) => b.type === 'tool_use')) {
+          const result = await chatDispatch(block.name, block.input);
+          results.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(result) });
+        }
+        messages.push({ role: 'user', content: results });
+      }
+      await chatMessages.add({ role: 'user', content: userMessage });
+      await chatMessages.add({ role: 'assistant', content: reply });
+      return { reply };
     },
   };
 }

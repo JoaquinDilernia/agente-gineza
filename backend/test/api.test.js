@@ -10,6 +10,7 @@ import { createSalesStore } from '../src/store/sales.js';
 import { createLearningsStore } from '../src/store/learnings.js';
 import { createProposalsStore } from '../src/store/proposals.js';
 import { createCreativesStore } from '../src/store/creatives.js';
+import { createChatMessagesStore } from '../src/store/chatMessages.js';
 import { createConfigStore } from '../src/config/configStore.js';
 
 const PASSWORD = 'test-password';
@@ -21,12 +22,12 @@ beforeEach(() => {
   stores = {
     decisions: createDecisionsStore(db), sales: createSalesStore(db),
     learnings: createLearningsStore(db), proposals: createProposalsStore(db),
-    creatives: createCreativesStore(db),
+    creatives: createCreativesStore(db), chatMessages: createChatMessagesStore(db),
   };
   meta = { updateBudget: vi.fn().mockResolvedValue({}), pauseAd: vi.fn(), pauseCampaign: vi.fn(), updateAdsetStatus: vi.fn(), createAdset: vi.fn(), createCampaign: vi.fn() };
   tiendanube = { updateVariantPrice: vi.fn().mockResolvedValue({}) };
   storage = { save: vi.fn().mockResolvedValue('path'), download: vi.fn() };
-  runner = { runDeep: vi.fn().mockResolvedValue() };
+  runner = { runDeep: vi.fn().mockResolvedValue(), chat: vi.fn().mockResolvedValue({ reply: 'una respuesta' }) };
   const executor = createDecisionExecutor({ meta, tiendanube, createAdFromCreative: vi.fn() });
   const metrics = { last7d: vi.fn().mockResolvedValue({ roas: 7 }) };
   const apiRouter = createApiRouter({ stores, configStore: createConfigStore(db), executor, storage, runner, metrics });
@@ -117,5 +118,22 @@ describe('agent run manual', () => {
     const res = await auth(request(app).post('/api/agent/run'));
     expect(res.status).toBe(200);
     expect(runner.runDeep).toHaveBeenCalled();
+  });
+});
+
+describe('chat', () => {
+  it('POST /chat manda el mensaje al runner y devuelve la respuesta', async () => {
+    const res = await auth(request(app).post('/api/chat')).send({ message: '¿por qué bajó el ROAS?' });
+    expect(res.status).toBe(200);
+    expect(runner.chat).toHaveBeenCalledWith('¿por qué bajó el ROAS?');
+    expect(res.body.reply).toBe('una respuesta');
+  });
+  it('POST /chat sin mensaje → 400', async () => {
+    expect((await auth(request(app).post('/api/chat')).send({})).status).toBe(400);
+  });
+  it('GET /chat devuelve el historial', async () => {
+    await stores.chatMessages.add({ role: 'user', content: 'hola' });
+    const res = await auth(request(app).get('/api/chat'));
+    expect(res.body).toHaveLength(1);
   });
 });

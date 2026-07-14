@@ -69,5 +69,17 @@ export function createApiRouter({ stores, configStore, executor, storage, runner
     res.json({ started: true });
   });
 
+  r.get('/chat', async (_req, res) => res.json(await stores.chatMessages.listRecent(60)));
+  r.post('/chat', async (req, res) => {
+    const message = (req.body?.message || '').trim();
+    if (!message) return res.status(400).json({ error: 'falta message' });
+    try {
+      const result = await runner.chat(message);
+      res.json(result);
+    } catch (err) {
+      res.status(502).json({ error: String(err.message || err) });
+    }
+  });
+
   return r;
 }

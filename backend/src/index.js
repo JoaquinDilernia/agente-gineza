@@ -9,12 +9,14 @@ import { createSalesStore } from './store/sales.js';
 import { createLearningsStore } from './store/learnings.js';
 import { createProposalsStore } from './store/proposals.js';
 import { createCreativesStore } from './store/creatives.js';
+import { createChatMessagesStore } from './store/chatMessages.js';
 import { createAgentStateStore } from './store/agentState.js';
 import { createMetaClient } from './services/meta.js';
 import { createTiendanubeClient } from './services/tiendanube.js';
 import { createStorage } from './services/storage.js';
 import { createContextBuilder } from './agent/contextBuilder.js';
 import { createToolDispatcher } from './agent/dispatcher.js';
+import { createChatToolDispatcher } from './agent/chatDispatcher.js';
 import { createAdBuilder } from './agent/createAd.js';
 import { createAgentRunner } from './agent/runner.js';
 import { createSaleProcessor } from './agent/saleProcessor.js';
@@ -41,6 +43,7 @@ const stores = {
   learnings: createLearningsStore(db),
   proposals: createProposalsStore(db),
   creatives: createCreativesStore(db),
+  chatMessages: createChatMessagesStore(db),
 };
 const agentState = createAgentStateStore(db);
 const storage = createStorage(bucket);
@@ -54,8 +57,12 @@ const createAdFromCreative = createAdBuilder({
   pageId: env('META_PAGE_ID'), igActorId: env('META_IG_ACTOR_ID'), linkUrl: 'https://ginezaonline.com/',
 });
 const dispatch = createToolDispatcher({ meta, stores, configStore, createAdFromCreative });
+const chatDispatch = createChatToolDispatcher({ meta, tiendanube, stores, createAdFromCreative });
 const contextBuilder = createContextBuilder({ meta, tiendanube, stores, configStore });
-const runner = createAgentRunner({ anthropic, contextBuilder, dispatch, agentState, configStore });
+const runner = createAgentRunner({
+  anthropic, contextBuilder, dispatch, agentState, configStore,
+  chatMessages: stores.chatMessages, chatDispatch,
+});
 const saleProcessor = createSaleProcessor({ tiendanube, meta, stores, configStore, runner });
 const executor = createDecisionExecutor({ meta, tiendanube, createAdFromCreative });
 const metrics = createMetricsService({ meta, configStore });
