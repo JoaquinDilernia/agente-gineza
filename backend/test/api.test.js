@@ -12,12 +12,11 @@ import { createProposalsStore } from '../src/store/proposals.js';
 import { createCreativesStore } from '../src/store/creatives.js';
 import { createConfigStore } from '../src/config/configStore.js';
 
-const okAuth = { verifyIdToken: vi.fn() };
+const PASSWORD = 'test-password';
 
 let app, stores, meta, tiendanube, storage, runner;
 
 beforeEach(() => {
-  okAuth.verifyIdToken.mockResolvedValue({ email: 'jdilernia99@gmail.com' });
   const db = createFakeFirestore();
   stores = {
     decisions: createDecisionsStore(db), sales: createSalesStore(db),
@@ -29,19 +28,23 @@ beforeEach(() => {
   storage = { save: vi.fn().mockResolvedValue('path'), download: vi.fn() };
   runner = { runDeep: vi.fn().mockResolvedValue() };
   const executor = createDecisionExecutor({ meta, tiendanube, createAdFromCreative: vi.fn() });
-  const apiRouter = createApiRouter({ stores, configStore: createConfigStore(db), executor, storage, runner });
-  app = createApp({ apiRouter: [createAuthMiddleware({ auth: okAuth, allowedEmail: 'jdilernia99@gmail.com' }), apiRouter] });
+  const metrics = { last7d: vi.fn().mockResolvedValue({ roas: 7 }) };
+  const apiRouter = createApiRouter({ stores, configStore: createConfigStore(db), executor, storage, runner, metrics });
+  app = createApp({ apiRouter: [createAuthMiddleware({ password: PASSWORD }), apiRouter] });
 });
 
-const auth = (r) => r.set('authorization', 'Bearer tok');
+const auth = (r) => r.set('authorization', `Bearer ${PASSWORD}`);
 
 describe('auth', () => {
   it('sin token → 401', async () => {
     expect((await request(app).get('/api/summary')).status).toBe(401);
   });
-  it('email ajeno → 403', async () => {
-    okAuth.verifyIdToken.mockResolvedValueOnce({ email: 'otro@x.com' });
-    expect((await auth(request(app).get('/api/summary'))).status).toBe(403);
+  it('contraseña incorrecta → 401', async () => {
+    const res = await request(app).get('/api/summary').set('authorization', 'Bearer mala');
+    expect(res.status).toBe(401);
+  });
+  it('contraseña correcta → 200 y /metrics responde', async () => {
+    expect((await auth(request(app).get('/api/metrics'))).body.roas).toBe(7);
   });
 });
 

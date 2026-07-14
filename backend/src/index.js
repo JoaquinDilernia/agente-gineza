@@ -31,7 +31,7 @@ const env = (k) => {
   return v;
 };
 
-const { db: rawDb, auth, bucket } = initFirebase();
+const { db: rawDb, bucket } = initFirebase();
 const db = prefixedDb(rawDb); // colecciones gineza_* — el proyecto Firebase es compartido
 
 const configStore = createConfigStore(db);
@@ -67,7 +67,7 @@ const app = createApp({
     onOrderEvent: (event) => saleProcessor.processOrderEvent(event),
   }),
   apiRouter: [
-    createAuthMiddleware({ auth, allowedEmail: env('ALLOWED_EMAIL') }),
+    createAuthMiddleware({ password: env('DASHBOARD_PASSWORD') }),
     createApiRouter({ stores, configStore, executor, storage, runner, metrics }),
   ],
 });
