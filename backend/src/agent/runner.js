@@ -9,9 +9,19 @@ export function createAgentRunner({ anthropic, contextBuilder, dispatch, agentSt
     const context = await contextBuilder.build(kind, extra);
     const messages = [{ role: 'user', content: context }];
     for (let turn = 0; turn < MAX_TURNS; turn++) {
-      const resp = await anthropic.messages.create({
-        model, max_tokens: 4096, system: SYSTEM_PROMPT, tools: TOOL_DEFINITIONS, messages,
+      // Sonnet 5 piensa (adaptive thinking) antes de actuar y eso consume max_tokens.
+      // effort "medium" acota la profundidad del razonamiento (default "high" agotaba
+      // 16K tokens solo pensando con este contexto grande). Streaming es obligatorio
+      // para max_tokens grandes (el SDK rechaza non-streaming por timeout HTTP).
+      const stream = anthropic.messages.stream({
+        model,
+        max_tokens: 32000,
+        output_config: { effort: 'medium' },
+        system: SYSTEM_PROMPT,
+        tools: TOOL_DEFINITIONS,
+        messages,
       });
+      const resp = await stream.finalMessage();
       messages.push({ role: 'assistant', content: resp.content });
       if (resp.stop_reason !== 'tool_use') break;
       const results = [];

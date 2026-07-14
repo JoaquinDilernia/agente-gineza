@@ -21,7 +21,8 @@ function makeRunner(anthropicResponses) {
   const configStore = createConfigStore(db);
   const create = vi.fn();
   anthropicResponses.forEach((r) => create.mockResolvedValueOnce(r));
-  const anthropic = { messages: { create } };
+  // el runner usa stream().finalMessage() — el mock delega en `create` para inspección
+  const anthropic = { messages: { stream: (params) => ({ finalMessage: () => create(params) }) } };
   const contextBuilder = { build: vi.fn().mockResolvedValue('CONTEXT') };
   const dispatch = vi.fn().mockResolvedValue({ ok: true });
   const runner = createAgentRunner({ anthropic, contextBuilder, dispatch, agentState, configStore });
