@@ -50,8 +50,8 @@ export function createApiRouter({ stores, configStore, executor, storage, runner
       return res.status(400).json({ error: 'faltan campos: feedImage, storyImage, name, copy, funnel' });
     }
     const ts = Date.now();
-    const feedPath = await storage.save(`creatives/${ts}_feed.jpg`, feed.buffer, feed.mimetype);
-    const storyPath = await storage.save(`creatives/${ts}_story.jpg`, story.buffer, story.mimetype);
+    const feedPath = await storage.save(`gineza/creatives/${ts}_feed.jpg`, feed.buffer, feed.mimetype);
+    const storyPath = await storage.save(`gineza/creatives/${ts}_story.jpg`, story.buffer, story.mimetype);
     const id = await stores.creatives.add({ name, copy, funnel, notes: notes || '', feedImagePath: feedPath, storyImagePath: storyPath });
     res.status(201).json({ id });
   });

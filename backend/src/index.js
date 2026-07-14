@@ -22,6 +22,7 @@ import { createDecisionExecutor } from './agent/decisionExecutor.js';
 import { createWebhookRouter } from './routes/webhooks.js';
 import { createApiRouter } from './routes/api.js';
 import { createAuthMiddleware } from './routes/authMiddleware.js';
+import { prefixedDb } from './store/prefixedDb.js';
 
 const env = (k) => {
   const v = process.env[k];
@@ -29,7 +30,8 @@ const env = (k) => {
   return v;
 };
 
-const { db, auth, bucket } = initFirebase();
+const { db: rawDb, auth, bucket } = initFirebase();
+const db = prefixedDb(rawDb); // colecciones gineza_* — el proyecto Firebase es compartido
 
 const configStore = createConfigStore(db);
 const stores = {

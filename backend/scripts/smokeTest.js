@@ -2,6 +2,7 @@
 // Uso: node scripts/smokeTest.js
 import 'dotenv/config';
 import { initFirebase } from '../src/firebase.js';
+import { prefixedDb } from '../src/store/prefixedDb.js';
 import { createTiendanubeClient } from '../src/services/tiendanube.js';
 import { createMetaClient } from '../src/services/meta.js';
 
@@ -12,7 +13,7 @@ console.log('1. Firebase (Firestore + Storage)');
 let db;
 try {
   const fb = initFirebase();
-  db = fb.db;
+  db = prefixedDb(fb.db);
   const ref = db.collection('_smoke').doc('test');
   await ref.set({ at: new Date().toISOString() });
   const snap = await ref.get();
