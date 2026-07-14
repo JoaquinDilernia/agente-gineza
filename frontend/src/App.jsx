@@ -4,6 +4,7 @@ import { createApi } from './api.js';
 import Login from './components/Login.jsx';
 import Layout from './components/Layout.jsx';
 import Resumen from './pages/Resumen.jsx';
+import Chat from './pages/Chat.jsx';
 import Ventas from './pages/Ventas.jsx';
 import Aprobaciones from './pages/Aprobaciones.jsx';
 import Historial from './pages/Historial.jsx';
@@ -42,6 +43,7 @@ export default function App() {
     <Layout api={api} onLogout={logout}>
       <Routes>
         <Route path="/" element={<Resumen api={api} />} />
+        <Route path="/chat" element={<Chat api={api} />} />
         <Route path="/ventas" element={<Ventas api={api} />} />
         <Route path="/aprobaciones" element={<Aprobaciones api={api} />} />
         <Route path="/historial" element={<Historial api={api} />} />

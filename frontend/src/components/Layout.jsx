@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 
 const NAV = [
   { to: '/', label: 'Resumen', icon: '◎' },
+  { to: '/chat', label: 'Chat', icon: '◆' },
   { to: '/ventas', label: 'Ventas', icon: '⬡' },
   { to: '/aprobaciones', label: 'Aprobaciones', icon: '✓', badge: true },
   { to: '/historial', label: 'Historial', icon: '≡' },
