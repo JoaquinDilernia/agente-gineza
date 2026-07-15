@@ -1,4 +1,4 @@
-import { withBudget, withPromotedObject } from './campaignPayload.js';
+import { withBudget, withPromotedObject, withTargetingAutomation } from './campaignPayload.js';
 
 export function createDecisionExecutor({ meta, tiendanube, createAdFromCreative, pixelId }) {
   return async function execute(decision) {
@@ -17,7 +17,7 @@ export function createDecisionExecutor({ meta, tiendanube, createAdFromCreative,
         if (input.action === 'pause_campaign') return meta.pauseCampaign(input.object_id);
         if (input.action === 'create_campaign') return meta.createCampaign(withPromotedObject(withBudget(input.payload, input.daily_budget_ars), pixelId));
         if (input.action === 'create_adset') {
-          const adset = await meta.createAdset(withPromotedObject(withBudget(input.payload, input.daily_budget_ars), pixelId));
+          const adset = await meta.createAdset(withTargetingAutomation(withPromotedObject(withBudget(input.payload, input.daily_budget_ars), pixelId)));
           // Campaña de prueba completa: público + presupuesto + pieza en UNA sola aprobación.
           if (input.creative_id) {
             const ad = await createAdFromCreative({ creative_id: input.creative_id, adset_id: adset.id });

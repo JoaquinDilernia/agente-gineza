@@ -81,6 +81,16 @@ describe('chatDispatcher — todo ejecuta directo, nada queda pending', () => {
     });
   });
 
+  it('propose_campaign_structure_change: create_adset sin targeting_automation usa default advantage_audience=0', async () => {
+    meta.createAdset.mockResolvedValue({ id: 'as_nuevo' });
+    await dispatch('propose_campaign_structure_change', {
+      action: 'create_adset', payload: { name: 'TEST', targeting: { age_min: 20 } }, reason: 'x',
+    });
+    expect(meta.createAdset).toHaveBeenCalledWith({
+      name: 'TEST', targeting: { age_min: 20, targeting_automation: { advantage_audience: 0 } },
+    });
+  });
+
   it('create_ad usa createAdFromCreative y marca el creativo usado', async () => {
     const r = await dispatch('create_ad', { creative_id: 'cr1', adset_id: 'as1', reason: 'x' });
     expect(createAdFromCreative).toHaveBeenCalledWith({ creative_id: 'cr1', adset_id: 'as1', reason: 'x' });

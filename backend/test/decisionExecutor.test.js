@@ -25,7 +25,9 @@ describe('decisionExecutor — propose_campaign_structure_change', () => {
       tool: 'propose_campaign_structure_change',
       input: { action: 'create_adset', daily_budget_ars: 5000, payload: { name: 'TEST', targeting: { interests: [1] } } },
     });
-    expect(meta.createAdset).toHaveBeenCalledWith({ name: 'TEST', targeting: { interests: [1] }, daily_budget: 500000 });
+    expect(meta.createAdset).toHaveBeenCalledWith({
+      name: 'TEST', targeting: { interests: [1], targeting_automation: { advantage_audience: 0 } }, daily_budget: 500000,
+    });
   });
 
   it('create_adset + creative_id: crea el conjunto Y lanza el ad con el creativo en una sola aprobación', async () => {
@@ -98,6 +100,34 @@ describe('decisionExecutor — propose_campaign_structure_change', () => {
       input: { action: 'create_adset', payload: { name: 'TEST', optimization_goal: 'OFFSITE_CONVERSIONS', promoted_object } },
     });
     expect(meta.createAdset).toHaveBeenCalledWith({ name: 'TEST', optimization_goal: 'OFFSITE_CONVERSIONS', promoted_object });
+  });
+
+  it('create_adset sin targeting_automation: default advantage_audience=0', async () => {
+    const { executor, meta } = make();
+    await executor({
+      tool: 'propose_campaign_structure_change',
+      input: { action: 'create_adset', payload: { name: 'TEST', targeting: { age_min: 20 } } },
+    });
+    expect(meta.createAdset).toHaveBeenCalledWith({
+      name: 'TEST', targeting: { age_min: 20, targeting_automation: { advantage_audience: 0 } },
+    });
+  });
+
+  it('create_adset con targeting_automation propio: no lo pisa', async () => {
+    const { executor, meta } = make();
+    await executor({
+      tool: 'propose_campaign_structure_change',
+      input: { action: 'create_adset', payload: { name: 'TEST', targeting: { targeting_automation: { advantage_audience: 1 } } } },
+    });
+    expect(meta.createAdset).toHaveBeenCalledWith({
+      name: 'TEST', targeting: { targeting_automation: { advantage_audience: 1 } },
+    });
+  });
+
+  it('create_adset sin targeting: no explota, no agrega nada', async () => {
+    const { executor, meta } = make();
+    await executor({ tool: 'propose_campaign_structure_change', input: { action: 'create_adset', payload: { name: 'TEST' } } });
+    expect(meta.createAdset).toHaveBeenCalledWith({ name: 'TEST' });
   });
 
   it('pause_adset y pause_campaign siguen andando igual', async () => {

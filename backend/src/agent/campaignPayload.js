@@ -15,3 +15,12 @@ export function withPromotedObject(payload, pixelId) {
   if (!payload || payload.optimization_goal !== 'OFFSITE_CONVERSIONS' || payload.promoted_object) return payload;
   return { ...payload, promoted_object: { pixel_id: pixelId, custom_event_type: 'PURCHASE' } };
 }
+
+// Graph API (v23+) exige targeting_automation.advantage_audience explícito (0 o 1) al
+// crear un adset. Si el agente no lo especificó, default a 0 (sin expansión de Meta más
+// allá del targeting que armó) — no queremos que Meta amplíe en silencio una segmentación
+// que el agente eligió a propósito.
+export function withTargetingAutomation(payload) {
+  if (!payload || !payload.targeting || payload.targeting.targeting_automation) return payload;
+  return { ...payload, targeting: { ...payload.targeting, targeting_automation: { advantage_audience: 0 } } };
+}

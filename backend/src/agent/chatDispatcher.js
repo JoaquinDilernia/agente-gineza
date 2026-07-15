@@ -1,7 +1,7 @@
 // Dispatcher para el chat interactivo: TODO ejecuta directo, nada queda pending.
 // El usuario está pidiendo la acción en vivo — eso ES la aprobación, a diferencia
 // del dispatcher del análisis autónomo (dispatcher.js) donde propose_* siempre encola.
-import { withBudget, withPromotedObject } from './campaignPayload.js';
+import { withBudget, withPromotedObject, withTargetingAutomation } from './campaignPayload.js';
 
 export function createChatToolDispatcher({ meta, tiendanube, stores, createAdFromCreative, pixelId }) {
   return async function dispatch(name, input) {
@@ -31,7 +31,7 @@ export function createChatToolDispatcher({ meta, tiendanube, stores, createAdFro
           else if (input.action === 'pause_campaign') { await meta.pauseCampaign(input.object_id); result = { ok: true }; }
           else if (input.action === 'create_campaign') { result = await meta.createCampaign(withPromotedObject(withBudget(input.payload, input.daily_budget_ars), pixelId)); }
           else if (input.action === 'create_adset') {
-            const adset = await meta.createAdset(withPromotedObject(withBudget(input.payload, input.daily_budget_ars), pixelId));
+            const adset = await meta.createAdset(withTargetingAutomation(withPromotedObject(withBudget(input.payload, input.daily_budget_ars), pixelId)));
             result = input.creative_id
               ? { adset, ad: await createAdFromCreative({ creative_id: input.creative_id, adset_id: adset.id }) }
               : { adset };
