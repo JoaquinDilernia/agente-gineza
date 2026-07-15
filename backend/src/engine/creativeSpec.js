@@ -31,3 +31,35 @@ export function buildPlacementCreativeSpec({ name, pageId, igActorId, link, mess
     degrees_of_freedom_spec: { creative_features_spec: { standard_enhancements: { enroll_status: 'OPT_OUT' } } },
   };
 }
+
+// Versión video: mismos placements, video_label en vez de image_label, SINGLE_VIDEO.
+// El thumbnail es el que Meta genera solo (el usuario eligió no subir portada).
+export function buildPlacementVideoCreativeSpec({ name, pageId, igActorId, link, message, feedVideoId, storyVideoId, feedThumbnailUrl, storyThumbnailUrl }) {
+  return {
+    name,
+    object_story_spec: { page_id: pageId, instagram_actor_id: igActorId },
+    asset_feed_spec: {
+      videos: [
+        { video_id: feedVideoId, thumbnail_url: feedThumbnailUrl, adlabels: [{ name: 'feed' }] },
+        { video_id: storyVideoId, thumbnail_url: storyThumbnailUrl, adlabels: [{ name: 'story' }] },
+      ],
+      bodies: [{ text: message }],
+      titles: [{ text: name }],
+      link_urls: [{ website_url: link }],
+      ad_formats: ['SINGLE_VIDEO'],
+      call_to_action_types: ['SHOP_NOW'],
+      optimization_type: 'PLACEMENT',
+      asset_customization_rules: [
+        {
+          customization_spec: { publisher_platforms: ['facebook', 'instagram'], facebook_positions: ['feed'], instagram_positions: ['stream'] },
+          video_label: { name: 'feed' },
+        },
+        {
+          customization_spec: { publisher_platforms: ['facebook', 'instagram'], facebook_positions: ['story'], instagram_positions: ['story'] },
+          video_label: { name: 'story' },
+        },
+      ],
+    },
+    degrees_of_freedom_spec: { creative_features_spec: { standard_enhancements: { enroll_status: 'OPT_OUT' } } },
+  };
+}

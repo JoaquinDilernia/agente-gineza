@@ -4,7 +4,7 @@ const RETRYABLE = new Set([17, 32, 613]); // rate limits de Graph API
 export function createMetaClient({ accessToken, accountId, fetchFn = fetch, retryDelayMs = 2000 }) {
   const BASE = `https://graph.facebook.com/${V}`;
 
-  async function reqOnce(path, { method = 'GET', params = {}, body } = {}) {
+  async function reqOnce(path, { method = 'GET', params = {}, body, form } = {}) {
     const url = new URL(`${BASE}/${path}`);
     url.searchParams.set('access_token', accessToken);
     for (const [k, v] of Object.entries(params)) {
@@ -12,7 +12,8 @@ export function createMetaClient({ accessToken, accountId, fetchFn = fetch, retr
     }
     const res = await fetchFn(url, {
       method,
-      ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
+      // form: multipart (fetch arma el boundary solo, NO setear Content-Type)
+      ...(form ? { body: form } : body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
     });
     const json = await res.json();
     if (json.error) {
@@ -60,6 +61,22 @@ export function createMetaClient({ accessToken, accountId, fetchFn = fetch, retr
     async uploadImage(buffer) {
       const json = await req(`${accountId}/adimages`, { method: 'POST', body: { bytes: buffer.toString('base64') } });
       return Object.values(json.images)[0].hash;
+    },
+    async uploadVideo(buffer, filename = 'video.mp4') {
+      const form = new FormData();
+      form.append('source', new Blob([buffer], { type: 'video/mp4' }), filename);
+      const json = await req(`${accountId}/advideos`, { method: 'POST', form });
+      return json.id;
+    },
+    async getVideoStatus(videoId) {
+      const json = await req(videoId, { params: { fields: 'status' } });
+      return json.status?.video_status || 'unknown';
+    },
+    async getVideoThumbnail(videoId) {
+      const json = await req(`${videoId}/thumbnails`);
+      const thumbs = json.data || [];
+      if (thumbs.length === 0) throw new Error(`el video ${videoId} no tiene thumbnails todavía`);
+      return (thumbs.find((t) => t.is_preferred) || thumbs[0]).uri;
     },
     createCreative: (spec) => req(`${accountId}/adcreatives`, { method: 'POST', body: spec }),
     async searchInterests(query) {
