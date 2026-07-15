@@ -10,6 +10,7 @@ function make() {
   const tiendanube = {
     getOrder: vi.fn().mockResolvedValue({
       id: 999,
+      payment_status: 'paid',
       products: [{ variant_id: 100, price: '50000.00', quantity: 1 }],
       shipping_cost_customer: '0.00',
       total: '50000.00',
@@ -44,5 +45,30 @@ describe('saleProcessor', () => {
     await processor.processOrderEvent({ event: 'order/paid', id: 999 });
     await processor.processOrderEvent({ event: 'order/paid', id: 999 });
     expect(runner.onSale).toHaveBeenCalledTimes(1);
+  });
+  it('orden con pago pendiente (order/created antes de confirmar transferencia): no registra venta ni dispara agente', async () => {
+    const { processor, stores, runner, tiendanube } = make();
+    tiendanube.getOrder.mockResolvedValue({
+      id: 999, payment_status: 'pending',
+      products: [{ variant_id: 100, price: '50000.00', quantity: 1 }],
+      shipping_cost_customer: '0.00', total: '50000.00',
+      payment_details: { method: 'wire_transfer', installments: 1 },
+    });
+    const r = await processor.processOrderEvent({ event: 'order/created', id: 999 });
+    expect(r).toEqual({ skipped: 'payment_status_not_paid', payment_status: 'pending' });
+    expect(await stores.sales.listRecent()).toHaveLength(0);
+    expect(runner.onSale).not.toHaveBeenCalled();
+  });
+  it('orden rechazada o vencida: no registra venta ni dispara agente', async () => {
+    const { processor, stores, runner, tiendanube } = make();
+    tiendanube.getOrder.mockResolvedValue({
+      id: 999, payment_status: 'voided',
+      products: [{ variant_id: 100, price: '50000.00', quantity: 1 }],
+      shipping_cost_customer: '0.00', total: '50000.00',
+      payment_details: { method: 'wire_transfer', installments: 1 },
+    });
+    await processor.processOrderEvent({ event: 'order/created', id: 999 });
+    expect(await stores.sales.listRecent()).toHaveLength(0);
+    expect(runner.onSale).not.toHaveBeenCalled();
   });
 });

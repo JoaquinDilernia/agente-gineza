@@ -21,6 +21,11 @@ export function createSaleProcessor({ tiendanube, meta, stores, configStore, run
   return {
     async processOrderEvent(event) {
       const order = await tiendanube.getOrder(event.id);
+      // El webhook está suscripto a order/created (dispara al crear la orden, ANTES de
+      // que se confirme el pago — sobre todo en transferencia) y a order/paid. Si no
+      // filtramos acá, una orden pendiente/rechazada/vencida se registraría como venta
+      // real y dispararía al agente con plata que nunca entró.
+      if (order.payment_status !== 'paid') return { skipped: 'payment_status_not_paid', payment_status: order.payment_status };
       if (!firstOrderLogged) {
         // spec §4: validar el mapeo contra el payload real la primera vez
         console.log('[saleProcessor] primera orden cruda:', JSON.stringify(order));
