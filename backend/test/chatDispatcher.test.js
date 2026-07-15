@@ -27,7 +27,7 @@ beforeEach(() => {
   };
   tiendanube = { updateVariantPrice: vi.fn().mockResolvedValue({}) };
   createAdFromCreative = vi.fn().mockResolvedValue({ ad_id: 'ad_9', name: 'X' });
-  dispatch = createChatToolDispatcher({ meta, tiendanube, stores, createAdFromCreative });
+  dispatch = createChatToolDispatcher({ meta, tiendanube, stores, createAdFromCreative, pixelId: 'px_1' });
 });
 
 describe('chatDispatcher — todo ejecuta directo, nada queda pending', () => {
@@ -68,6 +68,17 @@ describe('chatDispatcher — todo ejecuta directo, nada queda pending', () => {
     });
     expect(createAdFromCreative).toHaveBeenCalledWith({ creative_id: 'cr_1', adset_id: 'as_nuevo' });
     expect(r.ad.ad_id).toBe('ad_9');
+  });
+
+  it('propose_campaign_structure_change: create_adset con OFFSITE_CONVERSIONS inyecta promoted_object con el pixel', async () => {
+    meta.createAdset.mockResolvedValue({ id: 'as_nuevo' });
+    await dispatch('propose_campaign_structure_change', {
+      action: 'create_adset', payload: { name: 'TEST', optimization_goal: 'OFFSITE_CONVERSIONS' }, reason: 'x',
+    });
+    expect(meta.createAdset).toHaveBeenCalledWith({
+      name: 'TEST', optimization_goal: 'OFFSITE_CONVERSIONS',
+      promoted_object: { pixel_id: 'px_1', custom_event_type: 'PURCHASE' },
+    });
   });
 
   it('create_ad usa createAdFromCreative y marca el creativo usado', async () => {

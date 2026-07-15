@@ -12,7 +12,10 @@ function make() {
   };
   const tiendanube = { updateVariantPrice: vi.fn().mockResolvedValue({}) };
   const createAdFromCreative = vi.fn().mockResolvedValue({ ad_id: 'ad_1', name: 'TEST_AD' });
-  return { executor: createDecisionExecutor({ meta, tiendanube, createAdFromCreative }), meta, tiendanube, createAdFromCreative };
+  return {
+    executor: createDecisionExecutor({ meta, tiendanube, createAdFromCreative, pixelId: 'px_1' }),
+    meta, tiendanube, createAdFromCreative,
+  };
 }
 
 describe('decisionExecutor — propose_campaign_structure_change', () => {
@@ -52,6 +55,49 @@ describe('decisionExecutor — propose_campaign_structure_change', () => {
       input: { action: 'create_campaign', daily_budget_ars: 10000, payload: { name: 'CAMP TEST' } },
     });
     expect(meta.createCampaign).toHaveBeenCalledWith({ name: 'CAMP TEST', daily_budget: 1000000 });
+  });
+
+  it('create_adset con optimization_goal=OFFSITE_CONVERSIONS: inyecta promoted_object con el pixel de la cuenta', async () => {
+    const { executor, meta } = make();
+    await executor({
+      tool: 'propose_campaign_structure_change',
+      input: { action: 'create_adset', payload: { name: 'TEST', optimization_goal: 'OFFSITE_CONVERSIONS' } },
+    });
+    expect(meta.createAdset).toHaveBeenCalledWith({
+      name: 'TEST', optimization_goal: 'OFFSITE_CONVERSIONS',
+      promoted_object: { pixel_id: 'px_1', custom_event_type: 'PURCHASE' },
+    });
+  });
+
+  it('create_campaign con optimization_goal=OFFSITE_CONVERSIONS: también inyecta promoted_object', async () => {
+    const { executor, meta } = make();
+    await executor({
+      tool: 'propose_campaign_structure_change',
+      input: { action: 'create_campaign', payload: { name: 'CAMP', optimization_goal: 'OFFSITE_CONVERSIONS' } },
+    });
+    expect(meta.createCampaign).toHaveBeenCalledWith({
+      name: 'CAMP', optimization_goal: 'OFFSITE_CONVERSIONS',
+      promoted_object: { pixel_id: 'px_1', custom_event_type: 'PURCHASE' },
+    });
+  });
+
+  it('create_adset sin optimization_goal=OFFSITE_CONVERSIONS: no agrega promoted_object', async () => {
+    const { executor, meta } = make();
+    await executor({
+      tool: 'propose_campaign_structure_change',
+      input: { action: 'create_adset', payload: { name: 'TEST' } },
+    });
+    expect(meta.createAdset).toHaveBeenCalledWith({ name: 'TEST' });
+  });
+
+  it('create_adset que ya trae promoted_object propio: no lo pisa', async () => {
+    const { executor, meta } = make();
+    const promoted_object = { pixel_id: 'otro_px', custom_event_type: 'LEAD' };
+    await executor({
+      tool: 'propose_campaign_structure_change',
+      input: { action: 'create_adset', payload: { name: 'TEST', optimization_goal: 'OFFSITE_CONVERSIONS', promoted_object } },
+    });
+    expect(meta.createAdset).toHaveBeenCalledWith({ name: 'TEST', optimization_goal: 'OFFSITE_CONVERSIONS', promoted_object });
   });
 
   it('pause_adset y pause_campaign siguen andando igual', async () => {

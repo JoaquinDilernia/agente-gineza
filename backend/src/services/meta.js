@@ -16,8 +16,10 @@ export function createMetaClient({ accessToken, accountId, fetchFn = fetch, retr
     });
     const json = await res.json();
     if (json.error) {
-      const err = new Error(`Meta ${json.error.code}: ${json.error.message}`);
+      const detail = json.error.error_user_msg || (json.error.error_subcode ? `subcode ${json.error.error_subcode}` : null);
+      const err = new Error(`Meta ${json.error.code}: ${json.error.message}${detail ? ` (${detail})` : ''}`);
       err.code = json.error.code;
+      err.subcode = json.error.error_subcode;
       throw err;
     }
     return json;

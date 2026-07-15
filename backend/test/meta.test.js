@@ -21,6 +21,13 @@ describe('cliente meta', () => {
     const meta = createMetaClient({ accessToken: 'tok', accountId: 'act_1', fetchFn });
     await expect(meta.getCampaigns()).rejects.toThrow('Meta 100: Invalid parameter');
   });
+  it('error con error_user_msg de Meta → se incluye en el mensaje (antes se perdía)', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(okJson({
+      error: { code: 100, message: 'Invalid parameter', error_subcode: 1885183, error_user_msg: 'Falta seleccionar un píxel para este conjunto de anuncios.' },
+    }));
+    const meta = createMetaClient({ accessToken: 'tok', accountId: 'act_1', fetchFn });
+    await expect(meta.getCampaigns()).rejects.toThrow('Falta seleccionar un píxel');
+  });
   it('rate limit (code 17) reintenta una vez', async () => {
     const fetchFn = vi.fn()
       .mockResolvedValueOnce(okJson({ error: { code: 17, message: 'rate limit' } }))

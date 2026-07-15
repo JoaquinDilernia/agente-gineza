@@ -58,15 +58,16 @@ const createAdFromCreative = createAdBuilder({
   meta, storage, stores, configStore,
   pageId: env('META_PAGE_ID'), igActorId: env('META_IG_ACTOR_ID'), linkUrl: 'https://ginezaonline.com/',
 });
+const metaPixelId = env('META_PIXEL_ID');
 const dispatch = createToolDispatcher({ meta, stores, configStore, createAdFromCreative });
-const chatDispatch = createChatToolDispatcher({ meta, tiendanube, stores, createAdFromCreative });
+const chatDispatch = createChatToolDispatcher({ meta, tiendanube, stores, createAdFromCreative, pixelId: metaPixelId });
 const contextBuilder = createContextBuilder({ meta, tiendanube, stores, configStore });
 const runner = createAgentRunner({
   anthropic, contextBuilder, dispatch, agentState, configStore,
   chatMessages: stores.chatMessages, chatDispatch,
 });
 const saleProcessor = createSaleProcessor({ tiendanube, meta, stores, configStore, runner });
-const executor = createDecisionExecutor({ meta, tiendanube, createAdFromCreative });
+const executor = createDecisionExecutor({ meta, tiendanube, createAdFromCreative, pixelId: metaPixelId });
 const metrics = createMetricsService({ meta, configStore });
 
 const app = createApp({
