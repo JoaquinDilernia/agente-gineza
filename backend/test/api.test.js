@@ -26,13 +26,17 @@ beforeEach(() => {
     creatives: createCreativesStore(db), chatMessages: createChatMessagesStore(db),
     creativeRequests: createCreativeRequestsStore(db),
   };
-  meta = { updateBudget: vi.fn().mockResolvedValue({}), pauseAd: vi.fn(), pauseCampaign: vi.fn(), updateAdsetStatus: vi.fn(), createAdset: vi.fn(), createCampaign: vi.fn() };
+  meta = {
+    updateBudget: vi.fn().mockResolvedValue({}), pauseAd: vi.fn(), pauseCampaign: vi.fn(),
+    updateAdsetStatus: vi.fn(), createAdset: vi.fn(), createCampaign: vi.fn(),
+    uploadVideo: vi.fn().mockResolvedValueOnce('vid_feed').mockResolvedValueOnce('vid_story'),
+  };
   tiendanube = { updateVariantPrice: vi.fn().mockResolvedValue({}) };
   storage = { save: vi.fn().mockResolvedValue('path'), download: vi.fn() };
   runner = { runDeep: vi.fn().mockResolvedValue(), chat: vi.fn().mockResolvedValue({ reply: 'una respuesta' }) };
   const executor = createDecisionExecutor({ meta, tiendanube, createAdFromCreative: vi.fn() });
   const metrics = { last7d: vi.fn().mockResolvedValue({ roas: 7 }) };
-  const apiRouter = createApiRouter({ stores, configStore: createConfigStore(db), executor, storage, runner, metrics });
+  const apiRouter = createApiRouter({ stores, configStore: createConfigStore(db), executor, storage, runner, metrics, meta });
   app = createApp({ apiRouter: [createAuthMiddleware({ password: PASSWORD }), apiRouter] });
 });
 
@@ -112,6 +116,47 @@ describe('config y creativos', () => {
       .field('name', 'X').field('copy', 'c').field('funnel', 'frio')
       .attach('feedImage', Buffer.from('f'), 'feed.jpg');
     expect(res.status).toBe(400);
+  });
+  it('POST /creatives con videos → sube a Meta y guarda mediaType video', async () => {
+    const res = await auth(request(app).post('/api/creatives'))
+      .field('name', 'REEL1').field('copy', 'Mirá esto').field('funnel', 'frio')
+      .attach('feedVideo', Buffer.from('fake-feed-video'), 'feed.mp4')
+      .attach('storyVideo', Buffer.from('fake-story-video'), 'story.mp4');
+    expect(res.status).toBe(201);
+    expect(meta.uploadVideo).toHaveBeenCalledTimes(2);
+    expect(storage.save).not.toHaveBeenCalled();
+    const [c] = await stores.creatives.listUnused();
+    expect(c).toMatchObject({ mediaType: 'video', feedVideoId: 'vid_feed', storyVideoId: 'vid_story' });
+  });
+  it('POST /creatives mezcla imagen + video → 400', async () => {
+    const res = await auth(request(app).post('/api/creatives'))
+      .field('name', 'X').field('copy', 'c').field('funnel', 'frio')
+      .attach('feedImage', Buffer.from('img'), 'feed.jpg')
+      .attach('storyVideo', Buffer.from('vid'), 'story.mp4');
+    expect(res.status).toBe(400);
+  });
+  it('POST /creatives con un solo video → 400', async () => {
+    const res = await auth(request(app).post('/api/creatives'))
+      .field('name', 'X').field('copy', 'c').field('funnel', 'frio')
+      .attach('feedVideo', Buffer.from('vid'), 'feed.mp4');
+    expect(res.status).toBe(400);
+  });
+  it('POST /creatives: si Meta falla la subida, 502 y NO queda doc', async () => {
+    meta.uploadVideo.mockReset().mockRejectedValue(new Error('Meta 100: bad video'));
+    const res = await auth(request(app).post('/api/creatives'))
+      .field('name', 'X').field('copy', 'c').field('funnel', 'frio')
+      .attach('feedVideo', Buffer.from('v1'), 'f.mp4')
+      .attach('storyVideo', Buffer.from('v2'), 's.mp4');
+    expect(res.status).toBe(502);
+    expect(await stores.creatives.listUnused()).toHaveLength(0);
+  });
+  it('POST /creatives de imágenes guarda mediaType image', async () => {
+    await auth(request(app).post('/api/creatives'))
+      .field('name', 'BORDO2').field('copy', 'c').field('funnel', 'caliente')
+      .attach('feedImage', Buffer.from('f'), 'feed.jpg')
+      .attach('storyImage', Buffer.from('s'), 'story.jpg');
+    const [c] = await stores.creatives.listUnused();
+    expect(c.mediaType).toBe('image');
   });
 });
 

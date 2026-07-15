@@ -78,7 +78,7 @@ const app = createApp({
   }),
   apiRouter: [
     createAuthMiddleware({ password: env('DASHBOARD_PASSWORD') }),
-    createApiRouter({ stores, configStore, executor, storage, runner, metrics }),
+    createApiRouter({ stores, configStore, executor, storage, runner, metrics, meta }),
   ],
 });
 
