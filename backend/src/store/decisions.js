@@ -7,6 +7,10 @@ export function createDecisionsStore(db) {
       return { id: ref.id, ...doc };
     },
     async setStatus(id, status, extra = {}) { await col.doc(id).set({ status, ...extra }, { merge: true }); },
+    // outcome de la retrospectiva: NO toca el status (una decisión failed sigue failed)
+    async recordOutcome(id, outcome) {
+      await col.doc(id).set({ outcome, outcomeAt: new Date().toISOString() }, { merge: true });
+    },
     async get(id) { const s = await col.doc(id).get(); return s.exists ? { id: s.id, ...s.data() } : null; },
     async listPending() {
       const s = await col.where('status', '==', 'pending').get();

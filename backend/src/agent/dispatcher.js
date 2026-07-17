@@ -41,7 +41,7 @@ export function createToolDispatcher({ meta, stores, configStore, createAdFromCr
         return { ok: true, learning_id: id };
       }
       if (name === 'record_outcome') {
-        await stores.decisions.setStatus(input.decision_id, 'executed', { outcome: input.outcome, outcomeAt: new Date().toISOString() });
+        await stores.decisions.recordOutcome(input.decision_id, input.outcome);
         return { ok: true };
       }
       return { error: `tool desconocida: ${name}` };

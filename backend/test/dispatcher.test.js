@@ -68,6 +68,13 @@ describe('dispatcher', () => {
     await dispatch('record_outcome', { decision_id: d.id, outcome: 'ROAS del conjunto subió 6.9→7.4' });
     expect((await stores.decisions.get(d.id)).outcome).toMatch(/7.4/);
   });
+  it('record_outcome NO pisa el status de una decisión failed (bug real del 16/07)', async () => {
+    const d = await stores.decisions.add({ tool: 'create_ad', status: 'failed', error: 'Meta 100: instagram_actor_id inválido' });
+    await dispatch('record_outcome', { decision_id: d.id, outcome: 'el ad nunca se creó, sigue bloqueado' });
+    const saved = await stores.decisions.get(d.id);
+    expect(saved.status).toBe('failed');
+    expect(saved.outcome).toMatch(/bloqueado/);
+  });
   it('search_interest devuelve resultados de Meta sin registrar decisión', async () => {
     const r = await dispatch('search_interest', { query: 'running' });
     expect(meta.searchInterests).toHaveBeenCalledWith('running');

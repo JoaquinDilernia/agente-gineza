@@ -65,7 +65,7 @@ export function createChatToolDispatcher({ meta, tiendanube, stores, createAdFro
           return { ok: true, learning_id: id };
         }
         case 'record_outcome':
-          await stores.decisions.setStatus(input.decision_id, 'executed', { outcome: input.outcome, outcomeAt: new Date().toISOString() });
+          await stores.decisions.recordOutcome(input.decision_id, input.outcome);
           return { ok: true };
         default:
           return { error: `tool desconocida: ${name}` };
