@@ -8,6 +8,7 @@ const NAV = [
   { to: '/aprobaciones', label: 'Aprobaciones', icon: '✓', badge: true },
   { to: '/historial', label: 'Historial', icon: '≡' },
   { to: '/creativos', label: 'Creativos', icon: '▣' },
+  { to: '/productos', label: 'Productos', icon: '⬢' },
   { to: '/propuestas', label: 'Propuestas', icon: '✦' },
   { to: '/config', label: 'Config', icon: '⚙' },
 ];

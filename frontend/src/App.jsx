@@ -9,6 +9,7 @@ import Ventas from './pages/Ventas.jsx';
 import Aprobaciones from './pages/Aprobaciones.jsx';
 import Historial from './pages/Historial.jsx';
 import Creativos from './pages/Creativos.jsx';
+import Productos from './pages/Productos.jsx';
 import Propuestas from './pages/Propuestas.jsx';
 import Config from './pages/Config.jsx';
 
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="/aprobaciones" element={<Aprobaciones api={api} />} />
         <Route path="/historial" element={<Historial api={api} />} />
         <Route path="/creativos" element={<Creativos api={api} />} />
+        <Route path="/productos" element={<Productos api={api} />} />
         <Route path="/propuestas" element={<Propuestas api={api} />} />
         <Route path="/config" element={<Config api={api} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
