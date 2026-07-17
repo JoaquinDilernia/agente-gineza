@@ -40,6 +40,7 @@ function CreativeRequests({ api }) {
 export default function Creativos({ api }) {
   const { data, error, loading, reload } = usePolling(() => api.get('/creatives'), [api]);
   const [form, setForm] = useState({ name: '', copy: '', funnel: 'caliente', notes: '' });
+  const [mediaType, setMediaType] = useState('image');
   const [feed, setFeed] = useState(null);
   const [story, setStory] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -52,8 +53,8 @@ export default function Creativos({ api }) {
     try {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => fd.append(k, v));
-      fd.append('feedImage', feed);
-      fd.append('storyImage', story);
+      fd.append(mediaType === 'video' ? 'feedVideo' : 'feedImage', feed);
+      fd.append(mediaType === 'video' ? 'storyVideo' : 'storyImage', story);
       await api.postForm('/creatives', fd);
       setMsg('✓ Creativo subido. El agente lo va a usar cuando detecte una oportunidad.');
       setForm({ name: '', copy: '', funnel: 'caliente', notes: '' });
@@ -93,6 +94,15 @@ export default function Creativos({ api }) {
               </select>
             </label>
           </div>
+          <div>
+            <label className="field">
+              Tipo de pieza
+              <select value={mediaType} onChange={(e) => { setMediaType(e.target.value); setFeed(null); setStory(null); }}>
+                <option value="image">Imagen</option>
+                <option value="video">Video</option>
+              </select>
+            </label>
+          </div>
         </div>
         <label className="field">
           Copy del anuncio
@@ -105,17 +115,18 @@ export default function Creativos({ api }) {
         <div className="form-row">
           <div>
             <label className="field">
-              Imagen feed (4:5)
-              <input required type="file" accept="image/*" onChange={(e) => setFeed(e.target.files[0])} />
+              {mediaType === 'video' ? 'Video feed (4:5)' : 'Imagen feed (4:5)'}
+              <input key={`feed-${mediaType}`} required type="file" accept={mediaType === 'video' ? 'video/*' : 'image/*'} onChange={(e) => setFeed(e.target.files[0])} />
             </label>
           </div>
           <div>
             <label className="field">
-              Imagen story (9:16)
-              <input required type="file" accept="image/*" onChange={(e) => setStory(e.target.files[0])} />
+              {mediaType === 'video' ? 'Video story (9:16)' : 'Imagen story (9:16)'}
+              <input key={`story-${mediaType}`} required type="file" accept={mediaType === 'video' ? 'video/*' : 'image/*'} onChange={(e) => setStory(e.target.files[0])} />
             </label>
           </div>
         </div>
+        {mediaType === 'video' && <p className="hint">Los videos se suben a Meta en este momento: el envío puede tardar un rato según el peso (máx 200MB por video).</p>}
         {msg && <p className={msg.startsWith('Error') ? 'error-banner' : 'hint'}>{msg}</p>}
         <button disabled={busy}>{busy ? 'Subiendo…' : 'Subir creativo'}</button>
       </form>
@@ -128,11 +139,12 @@ export default function Creativos({ api }) {
         <div className="card">
           <div className="table-wrap">
           <table>
-            <thead><tr><th>Nombre</th><th>Copy</th><th>Funnel</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Tipo</th><th>Copy</th><th>Funnel</th><th>Estado</th></tr></thead>
             <tbody>
               {data.map((c) => (
                 <tr key={c.id}>
                   <td><strong>{c.name}</strong></td>
+                  <td>{c.mediaType === 'video' ? '🎬 video' : '🖼️ imagen'}</td>
                   <td style={{ maxWidth: 320, color: 'var(--muted)' }}>{c.copy}</td>
                   <td>{c.funnel}</td>
                   <td><span className={`chip ${c.status}`}>{c.status === 'unused' ? 'sin usar' : `usado → ${c.adId}`}</span></td>
