@@ -158,6 +158,19 @@ describe('config y creativos', () => {
     const [c] = await stores.creatives.listUnused();
     expect(c.mediaType).toBe('image');
   });
+  it('POST /creatives exitoso dispara una corrida del agente (evalúa el creativo nuevo)', async () => {
+    await auth(request(app).post('/api/creatives'))
+      .field('name', 'BORDO3').field('copy', 'c').field('funnel', 'caliente')
+      .attach('feedImage', Buffer.from('f'), 'feed.jpg')
+      .attach('storyImage', Buffer.from('s'), 'story.jpg');
+    expect(runner.runDeep).toHaveBeenCalledTimes(1);
+  });
+  it('POST /creatives inválido NO dispara corrida del agente', async () => {
+    await auth(request(app).post('/api/creatives'))
+      .field('name', 'X').field('copy', 'c').field('funnel', 'frio')
+      .attach('feedImage', Buffer.from('f'), 'feed.jpg');
+    expect(runner.runDeep).not.toHaveBeenCalled();
+  });
 });
 
 describe('agent run manual', () => {

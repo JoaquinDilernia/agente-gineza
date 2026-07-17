@@ -71,6 +71,8 @@ export function createApiRouter({ stores, configStore, executor, storage, runner
         const feedVideoId = await meta.uploadVideo(feedVideo.buffer, feedVideo.originalname);
         const storyVideoId = await meta.uploadVideo(storyVideo.buffer, storyVideo.originalname);
         const id = await stores.creatives.add({ name, copy, funnel, notes: notes || '', mediaType: 'video', feedVideoId, storyVideoId });
+        // corrida en background: que el agente evalúe el creativo nuevo sin esperar al cron
+        Promise.resolve(runner.runDeep()).catch((err) => console.error('[creatives→run] falló:', err));
         return res.status(201).json({ id });
       } catch (err) {
         return res.status(502).json({ error: String(err.message || err) });
@@ -83,6 +85,7 @@ export function createApiRouter({ stores, configStore, executor, storage, runner
     const feedPath = await storage.save(`gineza/creatives/${ts}_feed.jpg`, feedImage.buffer, feedImage.mimetype);
     const storyPath = await storage.save(`gineza/creatives/${ts}_story.jpg`, storyImage.buffer, storyImage.mimetype);
     const id = await stores.creatives.add({ name, copy, funnel, notes: notes || '', mediaType: 'image', feedImagePath: feedPath, storyImagePath: storyPath });
+    Promise.resolve(runner.runDeep()).catch((err) => console.error('[creatives→run] falló:', err));
     res.status(201).json({ id });
   });
   r.get('/creatives', async (_req, res) => res.json(await stores.creatives.list()));
