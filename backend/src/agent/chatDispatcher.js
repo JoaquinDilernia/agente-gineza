@@ -2,6 +2,7 @@
 // El usuario está pidiendo la acción en vivo — eso ES la aprobación, a diferencia
 // del dispatcher del análisis autónomo (dispatcher.js) donde propose_* siempre encola.
 import { withBudget, withPromotedObject, withTargetingAutomation } from './campaignPayload.js';
+import { buildProductPayload } from '../engine/productPayload.js';
 
 export function createChatToolDispatcher({ meta, tiendanube, stores, createAdFromCreative, pixelId }) {
   return async function dispatch(name, input) {
@@ -37,6 +38,18 @@ export function createChatToolDispatcher({ meta, tiendanube, stores, createAdFro
               : { adset };
           } else return { error: `acción desconocida: ${input.action}` };
           break;
+        case 'get_product': {
+          const p = await tiendanube.getProduct(input.product_id);
+          return {
+            id: p.id, name: p.name, description: p.description,
+            variants: (p.variants || []).map((v) => ({ id: v.id, price: v.price, cost: v.cost, values: v.values })),
+          };
+        }
+        case 'create_product': {
+          const product = await tiendanube.createProduct(buildProductPayload(input));
+          result = { ok: true, product_id: product.id, hidden: true };
+          break;
+        }
         case 'log_improvement_proposal':
           await stores.proposals.add({ title: input.title, body: input.body });
           return { ok: true };

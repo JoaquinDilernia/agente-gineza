@@ -21,5 +21,7 @@ export function createTiendanubeClient({ storeId, token, fetchFn = fetch }) {
     },
     updateVariantPrice: (productId, variantId, price) =>
       req(`/products/${productId}/variants/${variantId}`, { method: 'PUT', body: JSON.stringify({ price: String(price) }) }),
+    getProduct: (productId) => req(`/products/${productId}`),
+    createProduct: (payload) => req('/products', { method: 'POST', body: JSON.stringify(payload) }),
   };
 }

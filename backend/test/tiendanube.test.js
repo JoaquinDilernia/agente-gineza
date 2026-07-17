@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createTiendanubeClient } from '../src/services/tiendanube.js';
 import { extractSaleInputs, buildCostIndex } from '../src/engine/extractSale.js';
+import { buildProductPayload } from '../src/engine/productPayload.js';
 
 describe('cliente tiendanube', () => {
   it('getOrder pega al endpoint correcto con auth', async () => {
@@ -33,6 +34,42 @@ describe('cliente tiendanube', () => {
     const fetchFn = vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => 'rate limited' });
     const tn = createTiendanubeClient({ storeId: '111', token: 'tok', fetchFn });
     await expect(tn.getOrder(1)).rejects.toThrow(/429/);
+  });
+  it('getProduct pega a /products/:id', async () => {
+    const fetchFn = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 9, name: { es: 'Magna' } }) });
+    const tn = createTiendanubeClient({ storeId: '111', token: 'tok', fetchFn });
+    const p = await tn.getProduct(9);
+    expect(String(fetchFn.mock.calls[0][0])).toBe('https://api.tiendanube.com/v1/111/products/9');
+    expect(p.id).toBe(9);
+  });
+  it('createProduct hace POST a /products con el payload', async () => {
+    const fetchFn = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 77 }) });
+    const tn = createTiendanubeClient({ storeId: '111', token: 'tok', fetchFn });
+    const payload = { name: { es: 'X' }, published: false };
+    const p = await tn.createProduct(payload);
+    const [url, opts] = fetchFn.mock.calls[0];
+    expect(String(url)).toBe('https://api.tiendanube.com/v1/111/products');
+    expect(opts.method).toBe('POST');
+    expect(JSON.parse(opts.body)).toEqual(payload);
+    expect(p.id).toBe(77);
+  });
+});
+
+describe('buildProductPayload', () => {
+  it('arma el producto OCULTO con una variante por talle (precio/costo string)', () => {
+    const p = buildProductPayload({
+      name: 'Calza Lumen', description_html: '<p>desc</p>', price_ars: 45990, cost_ars: 18000, sizes: ['S', 'M', 'L'],
+    });
+    expect(p.published).toBe(false); // SIEMPRE nace oculto
+    expect(p.name).toEqual({ es: 'Calza Lumen' });
+    expect(p.description).toEqual({ es: '<p>desc</p>' });
+    expect(p.attributes).toEqual([{ es: 'Talle' }]);
+    expect(p.variants).toHaveLength(3);
+    expect(p.variants[0]).toEqual({ price: '45990', cost: '18000', values: [{ es: 'S' }] });
+  });
+  it('sin talles → error claro', () => {
+    expect(() => buildProductPayload({ name: 'X', description_html: 'd', price_ars: 1, cost_ars: 1, sizes: [] }))
+      .toThrow(/talle/);
   });
 });
 

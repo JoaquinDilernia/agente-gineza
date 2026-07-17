@@ -79,3 +79,30 @@ export const TOOL_DEFINITIONS = [
     input_schema: { type: 'object', properties: { decision_id: s('ID de la decisión'), outcome: s('Qué pasó realmente, con números') }, required: ['decision_id', 'outcome'] },
   },
 ];
+
+// Tools disponibles SOLO en el chat (el usuario autoriza en vivo). El análisis
+// autónomo de background no puede crear productos.
+export const CHAT_ONLY_TOOL_DEFINITIONS = [
+  {
+    name: 'get_product',
+    description: 'Trae un producto de Tienda Nube (nombre, descripción HTML y variantes con precio/costo). Usalo para leer la descripción de un producto de referencia antes de escribir una nueva, o para comparar precios. Solo lectura, no requiere aprobación.',
+    input_schema: { type: 'object', properties: { product_id: n('ID del producto en TN (está en la tabla de productos del contexto)') }, required: ['product_id'] },
+  },
+  {
+    name: 'create_product',
+    description: 'Crea un producto NUEVO en Tienda Nube, SIEMPRE oculto (published: false). Flujo obligatorio: (1) leé con get_product la descripción de un producto comparable (el usuario suele citar uno, ej. Magna) y calcá su estructura, tono y formato HTML; (2) recomendá el precio mostrando la cuenta completa: costo → precio → margen neto con y sin el 15% de descuento por transferencia (más comisión de pago e impuestos); (3) esperá la confirmación explícita del usuario sobre precio y descripción ANTES de crear. Después recordale que el producto quedó oculto y sin fotos.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        name: s('Nombre del producto'),
+        description_html: s('Descripción en HTML calcando el estilo del producto de referencia'),
+        price_ars: n('Precio de venta en ARS (el confirmado por el usuario)'),
+        cost_ars: n('Costo del producto en ARS (lo pasa el usuario)'),
+        sizes: { type: 'array', items: { type: 'string' }, description: 'Talles a crear como variantes, ej. ["S","M","L"] — los indica el usuario en cada creación, no asumas una curva' },
+      },
+      required: ['name', 'description_html', 'price_ars', 'cost_ars', 'sizes'],
+    },
+  },
+];
+
+export const CHAT_TOOL_DEFINITIONS = [...TOOL_DEFINITIONS, ...CHAT_ONLY_TOOL_DEFINITIONS];

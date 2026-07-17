@@ -1,4 +1,4 @@
-import { TOOL_DEFINITIONS } from './tools.js';
+import { TOOL_DEFINITIONS, CHAT_TOOL_DEFINITIONS } from './tools.js';
 import { SYSTEM_PROMPT } from './systemPrompt.js';
 import { shouldRunSaleAnalysis } from './rateLimit.js';
 
@@ -63,7 +63,7 @@ export function createAgentRunner({ anthropic, contextBuilder, dispatch, agentSt
       for (let turn = 0; turn < CHAT_MAX_TURNS; turn++) {
         const stream = anthropic.messages.stream({
           model, max_tokens: 8000, output_config: { effort: 'medium' },
-          system: SYSTEM_PROMPT, tools: TOOL_DEFINITIONS, messages,
+          system: SYSTEM_PROMPT, tools: CHAT_TOOL_DEFINITIONS, messages,
         });
         const resp = await stream.finalMessage();
         messages.push({ role: 'assistant', content: resp.content });

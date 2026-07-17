@@ -25,7 +25,14 @@ beforeEach(() => {
     createCampaign: vi.fn().mockResolvedValue({ id: 'c_1' }),
     searchInterests: vi.fn().mockResolvedValue([{ id: '2', name: 'Yoga', audienceMin: 50, audienceMax: 90 }]),
   };
-  tiendanube = { updateVariantPrice: vi.fn().mockResolvedValue({}) };
+  tiendanube = {
+    updateVariantPrice: vi.fn().mockResolvedValue({}),
+    getProduct: vi.fn().mockResolvedValue({
+      id: 9, name: { es: 'Magna' }, description: { es: '<p>desc magna</p>' },
+      variants: [{ id: 1, price: '89990', cost: '35000', values: [{ es: 'S' }] }],
+    }),
+    createProduct: vi.fn().mockResolvedValue({ id: 77 }),
+  };
   createAdFromCreative = vi.fn().mockResolvedValue({ ad_id: 'ad_9', name: 'X' });
   dispatch = createChatToolDispatcher({ meta, tiendanube, stores, createAdFromCreative, pixelId: 'px_1' });
 });
@@ -123,5 +130,33 @@ describe('chatDispatcher — todo ejecuta directo, nada queda pending', () => {
     const r2 = await dispatch('save_learning', { text: 't', evidence: 'e' });
     expect(r2.ok).toBe(true);
     expect(await stores.learnings.listActive()).toHaveLength(1);
+  });
+
+  it('get_product devuelve el producto sin registrar decisión (solo lectura)', async () => {
+    const r = await dispatch('get_product', { product_id: 9 });
+    expect(tiendanube.getProduct).toHaveBeenCalledWith(9);
+    expect(r.name).toEqual({ es: 'Magna' });
+    expect(r.description).toEqual({ es: '<p>desc magna</p>' });
+    expect(await stores.decisions.listRecent()).toHaveLength(0);
+  });
+
+  it('create_product crea el producto OCULTO con variantes por talle y registra executed', async () => {
+    const r = await dispatch('create_product', {
+      name: 'Calza Lumen', description_html: '<p>d</p>', price_ars: 45990, cost_ars: 18000,
+      sizes: ['S', 'M'], reason: 'me lo pediste en el chat',
+    });
+    expect(r).toMatchObject({ ok: true, product_id: 77, hidden: true });
+    const payload = tiendanube.createProduct.mock.calls[0][0];
+    expect(payload.published).toBe(false);
+    expect(payload.variants).toHaveLength(2);
+    expect(payload.variants[1].values).toEqual([{ es: 'M' }]);
+    const [d] = await stores.decisions.listRecent();
+    expect(d).toMatchObject({ tool: 'create_product', status: 'executed', source: 'chat' });
+  });
+
+  it('create_product sin talles → error, no crea nada', async () => {
+    const r = await dispatch('create_product', { name: 'X', description_html: 'd', price_ars: 1, cost_ars: 1, sizes: [] });
+    expect(r.error).toMatch(/talle/);
+    expect(tiendanube.createProduct).not.toHaveBeenCalled();
   });
 });
