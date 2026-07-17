@@ -1,7 +1,21 @@
 // Spec de creative con customización por placement (feed 4:5 / story 9:16).
 // Reglas ganadas con sangre en sesiones previas:
 //  - image_label DEBE ser objeto {name}, no string (error #100 de Meta si no).
-//  - standard_enhancements OPT_OUT: el usuario no quiere mejoras de IA. No negociable.
+//  - SIN mejoras de IA de Meta: no negociable. standard_enhancements quedó deprecado
+//    (17/07/2026) — ahora hay que optar por NO en cada función individual.
+
+// Opt-out explícito de TODAS las funciones de "mejora" de Advantage+ creative.
+// Lista verificada contra la API real (act de Gineza, v23.0, 17/07/2026).
+const NO_AI_ENHANCEMENTS = {
+  creative_features_spec: Object.fromEntries(
+    [
+      'image_brightness_and_contrast', 'enhance_cta', 'text_optimizations',
+      'image_touchups', 'image_uncrop', 'inline_comment', 'adapt_to_placement',
+      'media_type_automation', 'product_extensions', 'description_automation',
+      'add_text_overlay', 'site_extensions', 'image_animation', 'text_generation',
+    ].map((f) => [f, { enroll_status: 'OPT_OUT' }]),
+  ),
+};
 export function buildPlacementCreativeSpec({ name, pageId, igActorId, link, message, feedImageHash, storyImageHash }) {
   return {
     name,
@@ -31,7 +45,7 @@ export function buildPlacementCreativeSpec({ name, pageId, igActorId, link, mess
         },
       ],
     },
-    degrees_of_freedom_spec: { creative_features_spec: { standard_enhancements: { enroll_status: 'OPT_OUT' } } },
+    degrees_of_freedom_spec: NO_AI_ENHANCEMENTS,
   };
 }
 
@@ -66,6 +80,6 @@ export function buildPlacementVideoCreativeSpec({ name, pageId, igActorId, link,
         },
       ],
     },
-    degrees_of_freedom_spec: { creative_features_spec: { standard_enhancements: { enroll_status: 'OPT_OUT' } } },
+    degrees_of_freedom_spec: NO_AI_ENHANCEMENTS,
   };
 }

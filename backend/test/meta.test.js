@@ -77,8 +77,12 @@ describe('buildPlacementCreativeSpec', () => {
       expect(typeof rule.image_label.name).toBe('string');
     }
   });
-  it('enhancements de IA desactivados y optimization PLACEMENT', () => {
-    expect(spec.degrees_of_freedom_spec.creative_features_spec.standard_enhancements.enroll_status).toBe('OPT_OUT');
+  it('enhancements de IA desactivados función por función (standard_enhancements deprecado) y optimization PLACEMENT', () => {
+    const features = spec.degrees_of_freedom_spec.creative_features_spec;
+    expect(features.standard_enhancements).toBeUndefined();
+    const keys = Object.keys(features);
+    expect(keys.length).toBeGreaterThanOrEqual(10);
+    for (const k of keys) expect(features[k]).toEqual({ enroll_status: 'OPT_OUT' });
     expect(spec.asset_feed_spec.optimization_type).toBe('PLACEMENT');
   });
 });
@@ -140,7 +144,9 @@ describe('buildPlacementVideoCreativeSpec', () => {
       expect(rule.video_label).toEqual({ name: expect.any(String) });
     }
   });
-  it('mantiene OPT_OUT de mejoras de IA (no negociable)', () => {
-    expect(spec.degrees_of_freedom_spec.creative_features_spec.standard_enhancements.enroll_status).toBe('OPT_OUT');
+  it('mantiene OPT_OUT de todas las mejoras de IA, función por función (no negociable)', () => {
+    const features = spec.degrees_of_freedom_spec.creative_features_spec;
+    expect(features.standard_enhancements).toBeUndefined();
+    for (const k of Object.keys(features)) expect(features[k]).toEqual({ enroll_status: 'OPT_OUT' });
   });
 });
