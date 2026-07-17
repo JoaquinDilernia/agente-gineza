@@ -67,6 +67,10 @@ describe('buildPlacementCreativeSpec', () => {
     name: 'X', pageId: 'p1', igActorId: 'ig1', link: 'https://ginezaonline.com/',
     message: 'Tu uniforme', feedImageHash: 'h_feed', storyImageHash: 'h_story',
   });
+  it('usa instagram_user_id, NO instagram_actor_id (deprecado en v22+, Meta lo rechaza con error #100 engañoso)', () => {
+    expect(spec.object_story_spec.instagram_user_id).toBe('ig1');
+    expect(spec.object_story_spec.instagram_actor_id).toBeUndefined();
+  });
   it('image_label es objeto {name}, NUNCA string (error #100 de Meta)', () => {
     for (const rule of spec.asset_feed_spec.asset_customization_rules) {
       expect(typeof rule.image_label).toBe('object');
@@ -126,6 +130,10 @@ describe('buildPlacementVideoCreativeSpec', () => {
       { video_id: 'vf1', thumbnail_url: 'https://cdn/f.jpg', adlabels: [{ name: 'feed' }] },
       { video_id: 'vs1', thumbnail_url: 'https://cdn/s.jpg', adlabels: [{ name: 'story' }] },
     ]);
+  });
+  it('usa instagram_user_id, no instagram_actor_id (deprecado)', () => {
+    expect(spec.object_story_spec.instagram_user_id).toBe('ig1');
+    expect(spec.object_story_spec.instagram_actor_id).toBeUndefined();
   });
   it('video_label es objeto {name}, no string (regla #100 de Meta)', () => {
     for (const rule of spec.asset_feed_spec.asset_customization_rules) {

@@ -5,7 +5,10 @@
 export function buildPlacementCreativeSpec({ name, pageId, igActorId, link, message, feedImageHash, storyImageHash }) {
   return {
     name,
-    object_story_spec: { page_id: pageId, instagram_actor_id: igActorId },
+    // instagram_user_id, NO instagram_actor_id: deprecado en Graph API v22+ — Meta lo
+    // rechaza con "#100 must be a valid Instagram account id" aunque el ID sea correcto
+    // (diagnosticado 17/07/2026 contra la API real).
+    object_story_spec: { page_id: pageId, instagram_user_id: igActorId },
     asset_feed_spec: {
       images: [
         { hash: feedImageHash, adlabels: [{ name: 'feed' }] },
@@ -37,7 +40,10 @@ export function buildPlacementCreativeSpec({ name, pageId, igActorId, link, mess
 export function buildPlacementVideoCreativeSpec({ name, pageId, igActorId, link, message, feedVideoId, storyVideoId, feedThumbnailUrl, storyThumbnailUrl }) {
   return {
     name,
-    object_story_spec: { page_id: pageId, instagram_actor_id: igActorId },
+    // instagram_user_id, NO instagram_actor_id: deprecado en Graph API v22+ — Meta lo
+    // rechaza con "#100 must be a valid Instagram account id" aunque el ID sea correcto
+    // (diagnosticado 17/07/2026 contra la API real).
+    object_story_spec: { page_id: pageId, instagram_user_id: igActorId },
     asset_feed_spec: {
       videos: [
         { video_id: feedVideoId, thumbnail_url: feedThumbnailUrl, adlabels: [{ name: 'feed' }] },
