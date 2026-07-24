@@ -9,6 +9,7 @@ export const DEFAULTS = {
   taxPct: 0.08,
   paymentFees: { transfer: 0.01, card_1: 0.049, card_3: 0.089 },
   autonomousMode: true,        // kill switch: en false, TODO va a pending
+  agentEnabled: true,          // kill switch real: en false, no corre análisis (cron/venta/creativo) → $0 tokens. Chat manual sigue andando.
   minMinutesBetweenSaleRuns: 30,
   // Mapeo para naming convention de anuncios nuevos
   adsetTags: {

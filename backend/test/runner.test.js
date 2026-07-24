@@ -26,7 +26,7 @@ function makeRunner(anthropicResponses) {
   const contextBuilder = { build: vi.fn().mockResolvedValue('CONTEXT') };
   const dispatch = vi.fn().mockResolvedValue({ ok: true });
   const runner = createAgentRunner({ anthropic, contextBuilder, dispatch, agentState, configStore });
-  return { runner, create, dispatch, agentState };
+  return { runner, create, dispatch, agentState, configStore };
 }
 
 describe('runner', () => {
@@ -45,9 +45,24 @@ describe('runner', () => {
     );
     expect(toolResultMsg.content[0]).toMatchObject({ type: 'tool_result', tool_use_id: 't1' });
   });
+  it('agentEnabled=false: runDeep no llama a Claude', async () => {
+    const { runner, create, configStore } = makeRunner([]);
+    await configStore.update({ agentEnabled: false });
+    const result = await runner.runDeep();
+    expect(create).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ skipped: true });
+  });
   it('onSale respeta el rate limit: encola sin correr', async () => {
     const { runner, create, agentState } = makeRunner([]);
     await agentState.set({ lastSaleRunAt: new Date().toISOString() });
+    await runner.onSale({ orderId: '55' });
+    expect(create).not.toHaveBeenCalled();
+    expect((await agentState.get()).pendingOrderIds).toContain('55');
+  });
+  it('agentEnabled=false: onSale encola sin correr ni perder el pedido', async () => {
+    const { runner, create, agentState, configStore } = makeRunner([]);
+    await configStore.update({ agentEnabled: false });
+    await agentState.set({ pendingOrderIds: [], lastSaleRunAt: '2026-01-01T00:00:00Z' });
     await runner.onSale({ orderId: '55' });
     expect(create).not.toHaveBeenCalled();
     expect((await agentState.get()).pendingOrderIds).toContain('55');

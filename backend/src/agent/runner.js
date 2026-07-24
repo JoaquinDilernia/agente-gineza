@@ -8,6 +8,11 @@ const CHAT_MAX_TURNS = 8;
 
 export function createAgentRunner({ anthropic, contextBuilder, dispatch, agentState, configStore, chatMessages, chatDispatch, model = 'claude-sonnet-5' }) {
   async function run(kind, extra = {}) {
+    const config = await configStore.get();
+    if (!config.agentEnabled) {
+      console.log(`[agent] agentEnabled=false, se salteó la corrida "${kind}"`);
+      return { skipped: true, reason: 'agent deshabilitado' };
+    }
     const context = await contextBuilder.build(kind, extra);
     const messages = [{ role: 'user', content: context }];
     for (let turn = 0; turn < MAX_TURNS; turn++) {
@@ -42,7 +47,7 @@ export function createAgentRunner({ anthropic, contextBuilder, dispatch, agentSt
       const config = await configStore.get();
       const state = await agentState.get();
       const pending = [...new Set([...state.pendingOrderIds, String(orderSummary.orderId)])];
-      if (!shouldRunSaleAnalysis(state, Date.now(), config.minMinutesBetweenSaleRuns)) {
+      if (!config.agentEnabled || !shouldRunSaleAnalysis(state, Date.now(), config.minMinutesBetweenSaleRuns)) {
         await agentState.set({ pendingOrderIds: pending });
         return { queued: true };
       }
